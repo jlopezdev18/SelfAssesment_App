@@ -2,6 +2,8 @@ import { useState } from "react";
 import { HiOutlineLockClosed, HiOutlineMail } from "react-icons/hi";
 import Logo from "/assets/Logo.svg";
 import SocialLoginButtons from "./SocialLoginButtons";
+import { loginWithEmail } from "../../firebase/auth";
+
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -10,6 +12,7 @@ export default function Login() {
 
   const onSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
+    await loginWithEmail(email, password);
     setIsLoading(true);
 
     // Simulate login process
