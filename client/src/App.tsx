@@ -1,9 +1,10 @@
-import Login from "./components/login/Login"
+import Dashboard from "./components/dashboard/Dashboard"
+//import Login from "./components/login/Login"
 function App() {
 
   return (
     <>
-      <Login/>
+      <Dashboard/>
     </>
   )
 }
