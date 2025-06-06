@@ -8,8 +8,8 @@ interface SidebarProps {
   setSidebarCollapsed: (collapsed: boolean) => void;
   darkMode: boolean;
   setDarkMode: (mode: boolean) => void;
-  activeTab: string;
-  setActiveTab: (tab: 'dashboard' | 'downloads') => void;
+  activeTab: 'dashboard' | 'downloads' | 'settings';
+  setActiveTab: (tab: 'dashboard' | 'downloads' | 'settings') => void;
   mutedTextClass: string;
   textClass: string;
   sidebarClass: string;
@@ -129,8 +129,13 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
 
         <button
-          className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'space-x-3'} px-3 py-2 rounded-lg text-left transition-colors ${mutedTextClass} hover:bg-gray-100 ${darkMode ? 'hover:bg-gray-700' : ''}`}
-          title={sidebarCollapsed ? 'Settings' : ''}
+          onClick={() => setActiveTab("settings")}
+          className={`w-full flex items-center ${
+            sidebarCollapsed ? "justify-center" : "space-x-3"
+          } px-3 py-2 rounded-lg text-left transition-colors ${
+            mutedTextClass
+          } hover:bg-gray-100 ${darkMode ? "hover:bg-gray-700" : ""}`}
+          title={sidebarCollapsed ? "Settings" : ""}
         >
           <FaCog className="w-5 h-5 flex-shrink-0" />
           {!sidebarCollapsed && <span>Settings</span>}

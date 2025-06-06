@@ -1,10 +1,10 @@
-import Dashboard from "./components/dashboard/Dashboard"
+import ProtectedDashboard from "./components/protectedDashboard/ProtectedDashboard"
 //import Login from "./components/login/Login"
 function App() {
 
   return (
     <>
-      <Dashboard/>
+      <ProtectedDashboard/>
     </>
   )
 }

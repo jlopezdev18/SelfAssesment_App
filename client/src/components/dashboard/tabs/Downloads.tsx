@@ -7,6 +7,7 @@ interface DownloadItem {
   size: string;
   version?: string;
   description: string;
+  downloadUrl: string; 
 }
 
 interface DownloadsProps {
@@ -27,9 +28,7 @@ const Downloads: React.FC<DownloadsProps> = ({
   getTypeIcon,
 }) => {
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<
-    "all" | "installer" | "document" | "resource"
-  >("all");
+  const [filter, setFilter] = useState<"all" | "installer" | "document" | "resource">("all");
 
   const filteredItems = downloadItems.filter((item) => {
     const matchesType = filter === "all" ? true : item.type === filter;
@@ -118,14 +117,14 @@ const Downloads: React.FC<DownloadsProps> = ({
                   </div>
                 </div>
               </div>
-              <p className={`${mutedTextClass} text-sm mb-4`}>
-                {item.description}
-              </p>
+              <p className={`${mutedTextClass} text-sm mb-4`}>{item.description}</p>
               <div className="flex items-center justify-between">
-                <span className={`text-sm font-semibold ${textClass}`}>
-                  {item.size}
-                </span>
-                <button
+                <span className={`text-sm font-semibold ${textClass}`}>{item.size}</span>
+                <a
+                  href={item.downloadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download
                   className="text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center hover:shadow-lg transform hover:scale-105"
                   style={{
                     background:
@@ -134,7 +133,7 @@ const Downloads: React.FC<DownloadsProps> = ({
                 >
                   Download
                   <FaExternalLinkAlt className="w-4 h-4 ml-1" />
-                </button>
+                </a>
               </div>
             </div>
           ))
