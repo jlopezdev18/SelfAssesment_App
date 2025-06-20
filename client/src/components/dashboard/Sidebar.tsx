@@ -10,17 +10,21 @@ import {
   FaSignOutAlt,
   FaChevronLeft,
   FaChevronRight,
+  FaTag,
+  FaUserFriends,
 } from "react-icons/fa";
 import { signOut } from "firebase/auth";
-import { auth } from "../../firebase/config"; // ajusta la ruta si es necesario
+import { auth } from "../../firebase/config";
 
 interface SidebarProps {
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (collapsed: boolean) => void;
   darkMode: boolean;
   setDarkMode: (mode: boolean) => void;
-  activeTab: "dashboard" | "downloads" | "settings";
-  setActiveTab: (tab: "dashboard" | "downloads" | "settings") => void;
+  activeTab: "dashboard" | "downloads" | "settings" | "versioning" | "clients";
+  setActiveTab: (
+    tab: "dashboard" | "downloads" | "settings" | "versioning" | "clients"
+  ) => void;
   mutedTextClass: string;
   textClass: string;
   sidebarClass: string;
@@ -41,7 +45,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     await signOut(auth);
     window.location.reload(); // O redirige a login si tienes rutas
   };
-
+  const isAdmin = true; // Cambia esto según tu lógica de autenticación
   return (
     <div
       className={`${
@@ -115,7 +119,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div
               className={`text-xs font-semibold ${mutedTextClass} uppercase tracking-wider mb-3`}
             >
-              MARKETING
+              INFORMATION & RESOURCES
             </div>
           )}
 
@@ -137,6 +141,23 @@ const Sidebar: React.FC<SidebarProps> = ({
           </button>
 
           <button
+            onClick={() => setActiveTab("versioning")}
+            className={`w-full flex items-center ${
+              sidebarCollapsed ? "justify-center" : "space-x-3"
+            } px-3 py-2 rounded-lg text-left transition-colors ${
+              activeTab === "versioning"
+                ? "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700 font-medium"
+                : `${mutedTextClass} hover:bg-gray-100 ${
+                    darkMode ? "hover:bg-gray-700" : ""
+                  }`
+            }`}
+            title={sidebarCollapsed ? "Versioning" : ""}
+          >
+            <FaTag className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span>Versioning</span>}
+          </button>
+
+          <button
             onClick={() => setActiveTab("downloads")}
             className={`w-full flex items-center ${
               sidebarCollapsed ? "justify-center" : "space-x-3"
@@ -152,6 +173,27 @@ const Sidebar: React.FC<SidebarProps> = ({
             <FaDownload className="w-5 h-5 flex-shrink-0" />
             {!sidebarCollapsed && <span>Downloads</span>}
           </button>
+          {isAdmin && !sidebarCollapsed && (
+            <div
+              className={`text-xs font-semibold ${mutedTextClass} uppercase tracking-wider mb-3 mt-6`}
+            >
+              CLIENTS
+            </div>
+          )}
+          {isAdmin && (
+            <button
+              onClick={() => setActiveTab("clients")}
+              className={`w-full flex items-center ${
+                sidebarCollapsed ? "justify-center" : "space-x-3"
+              } px-3 py-2 rounded-lg text-left transition-colors ${mutedTextClass} hover:bg-gray-100 ${
+                darkMode ? "hover:bg-gray-700" : ""
+              }`}
+              title={sidebarCollapsed ? "Clients" : ""}
+            >
+              <FaUserFriends className="w-5 h-5 flex-shrink-0" />
+              {!sidebarCollapsed && <span>Clients</span>}
+            </button>
+          )}
 
           {!sidebarCollapsed && (
             <div

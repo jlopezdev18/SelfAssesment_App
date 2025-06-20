@@ -5,9 +5,11 @@ import Swal from "sweetalert2";
 import { auth, db } from "../../firebase/config";
 import Dashboard from "../dashboard/Dashboard";
 import Login from "../login/Login";
+import ResetPasswordForm from "../resetPassword/ResetPasswordForm";
 
 const ProtectedDashboard: React.FC = () => {
   const [allowed, setAllowed] = useState<null | boolean>(null);
+  const [showResetForm, setShowResetForm] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -37,7 +39,9 @@ const ProtectedDashboard: React.FC = () => {
 
   if (allowed === null) return null; // o un spinner
 
-  return allowed ? <Dashboard /> : <Login />;
+  return allowed ? <Dashboard /> : showResetForm ? (<ResetPasswordForm onBack={() => setShowResetForm(false)} />) : (
+    <Login onShowResetForm={() => setShowResetForm(true)} />
+  );
 };
 
 export default ProtectedDashboard;

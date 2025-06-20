@@ -3,24 +3,32 @@ import { HiOutlineLockClosed, HiOutlineMail } from "react-icons/hi";
 import Logo from "/assets/Logo.svg";
 import SocialLoginButtons from "./SocialLoginButtons";
 import { loginWithEmail } from "../../firebase/auth";
+import { getAuth } from "firebase/auth";
 
 
-export default function Login() {
+export default function Login({ onShowResetForm }: { onShowResetForm: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const onSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    await loginWithEmail(email, password);
     setIsLoading(true);
-
-    // Simulate login process
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      console.log("Login attempt with:", { email, password });
-      // Here you would call your actual login handler
-      // await handleLogin(email, password);
+      await loginWithEmail(email, password);
+
+      // Check for firstTimeLogin claim
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (user) {
+        const idTokenResult = await user.getIdTokenResult();
+        if (idTokenResult.claims.firstTimeLogin) {
+          onShowResetForm();
+          return;
+        }
+      }
+
+      // Continue with normal login flow (redirect, etc.)
     } catch (error) {
       console.error("Login failed:", error);
     } finally {
@@ -88,12 +96,12 @@ export default function Login() {
                 >
                   Password
                 </label>
-                <a
-                  href="#"
-                  className="text-xs font-medium text-blue-600 hover:text-blue-400"
+                <button
+                  onClick={onShowResetForm}
+                  className="text-xs font-medium text-blue-600 hover:text-blue-400 transition-colors"
                 >
-                  Forgot your password?
-                </a>
+                  Reset Password
+                </button>
               </div>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
