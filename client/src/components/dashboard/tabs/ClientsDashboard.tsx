@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useEffect, useState } from "react";
 import {
   FaEdit,
   FaBell,
@@ -53,50 +54,28 @@ const ClientsDashboard: React.FC<ClientsProps> = ({
   const [formErrors, setFormErrors] = useState<Partial<NewClientForm>>({});
 
   // Sample client data
-  const [clients, setClients] = useState<Client[]>([
-    {
-      id: "1",
-      name: "Devon Lane",
-      email: "devon.lane@email.com",
-      status: "active",
-      nextPaymentDate: "2025-07-14",
-    },
-    {
-      id: "2",
-      name: "Dianne Russell",
-      email: "dianne.russell@email.com",
-      status: "active",
-      nextPaymentDate: "2025-06-27",
-    },
-    {
-      id: "3",
-      name: "Kathryn Murphy",
-      email: "kathryn.murphy@email.com",
-      status: "active",
-      nextPaymentDate: "2025-07-01",
-    },
-    {
-      id: "4",
-      name: "Marvin McKinney",
-      email: "marvin.mckinney@email.com",
-      status: "inactive",
-      nextPaymentDate: "2025-08-09",
-    },
-    {
-      id: "5",
-      name: "Jacob Jones",
-      email: "jacob.jones@email.com",
-      status: "active",
-      nextPaymentDate: "2025-06-24",
-    },
-    {
-      id: "6",
-      name: "Jerome Bell",
-      email: "jerome.bell@email.com",
-      status: "pending",
-      nextPaymentDate: "2025-07-19",
-    },
-  ]);
+  const [clients, setClients] = useState<Client[]>([]);
+
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const response = await axios.get("http://localhost:4000/api/users/users-with-role-user");
+        // Map Firestore data to your Client interface
+        const data = response.data as { users: any[] };
+        const users = data.users.map((user: any) => ({
+          id: user.id,
+          name: user.displayName || `${user.firstName} ${user.lastName}`,
+          email: user.email,
+          status: user.status || "pending",
+          nextPaymentDate: user.nextPaymentDate || "",
+        }));
+        setClients(users);
+      } catch (error) {
+        console.error("Error fetching clients:", error);
+      }
+    };
+    fetchClients();
+  }, []);
 
   const filteredClients = clients.filter((client) => {
     const matchesSearch =

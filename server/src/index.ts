@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import authRoutes from './routes/authRoutes';
+import{ authRoutes, userRoute } from './routes/index';
 import admin from './firebase';
 
 dotenv.config();
@@ -11,6 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api', authRoutes);
+app.use('/api/users', userRoute);
 app.get('/api/test-firebase', async (req, res) => {
   try {
     const users = await admin.auth().listUsers(1); // Get one user

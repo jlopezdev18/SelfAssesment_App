@@ -6,7 +6,7 @@ import { db, storage } from "../firebase/config"; // Asegúrate de que estén co
 
 interface DownloadItem {
   name: string;
-  type: "installer" | "document" | "resource";
+  type: "installers" | "documents" | "resources";
   size: string;
   version?: string;
   description: string;
@@ -25,7 +25,6 @@ export const useDownload = () => {
         const items: DownloadItem[] = [];
         for (const doc of querySnapshot.docs) {
           const data = doc.data();
-        console.log(data);
           if (!data.path) {
             console.warn(
               `Documento ${doc.id} tiene un 'path' inválido:`,

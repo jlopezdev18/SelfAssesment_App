@@ -15,6 +15,7 @@ import {
 } from "react-icons/fa";
 import { signOut } from "firebase/auth";
 import { auth } from "../../firebase/config";
+import { useIsAdmin } from "../../hooks/useIsAdmin";
 
 interface SidebarProps {
   sidebarCollapsed: boolean;
@@ -41,11 +42,14 @@ const Sidebar: React.FC<SidebarProps> = ({
   textClass,
   sidebarClass,
 }) => {
+
+  const isAdmin = useIsAdmin();
+
   const handleLogout = async () => {
     await signOut(auth);
     window.location.reload(); // O redirige a login si tienes rutas
   };
-  const isAdmin = true; // Cambia esto según tu lógica de autenticación
+
   return (
     <div
       className={`${

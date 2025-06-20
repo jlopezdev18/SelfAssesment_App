@@ -32,8 +32,7 @@ export const createUser = async (req: Request, res: Response): Promise<any> => {
     });
     // Send the temporary password email
     await sendEmailToUser(email, password);
-  
-    return res.status(200).json({ message: 'User created and email sent.' });
+    return res.status(200).json({ message: 'User created and email sent.' , password: password});
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }
@@ -55,5 +54,19 @@ export const removeFirstTimeFlag = async (req: Request, res: Response): Promise<
     return res.status(200).json({ message: 'First-time login flag removed' });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
+  }
+};
+
+export const setUserRole = async (req: Request, res: Response): Promise<any> => {
+  const { uid, role } = req.body; // uid: user's UID, role: "admin" or "user"
+  if (!uid || !role) {
+    return res.status(400).json({ error: "uid and role are required" });
+  }
+  try {
+    await admin.auth().setCustomUserClaims(uid, { role });
+    return res.status(200).json({ message: "Role set successfully" });
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+    return res.status(500).json({ error: errorMessage });
   }
 };

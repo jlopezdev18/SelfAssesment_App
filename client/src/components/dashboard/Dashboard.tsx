@@ -14,11 +14,11 @@ const Dashboard: React.FC = () => {
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case "installer":
+      case "installers":
         return <FaDownload className="w-5 h-5" />;
-      case "document":
+      case "documents":
         return <FaFileAlt className="w-5 h-5" />;
-      case "resource":
+      case "resources":
         return <FaCog className="w-5 h-5" />;
       default:
         return <FaFileAlt className="w-5 h-5" />;

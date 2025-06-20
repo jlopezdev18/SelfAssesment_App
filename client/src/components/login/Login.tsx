@@ -22,6 +22,7 @@ export default function Login({ onShowResetForm }: { onShowResetForm: () => void
       const user = auth.currentUser;
       if (user) {
         const idTokenResult = await user.getIdTokenResult();
+        console.log(idTokenResult.claims);
         if (idTokenResult.claims.firstTimeLogin) {
           onShowResetForm();
           return;

@@ -130,7 +130,9 @@ export default function ResetPasswordForm({ onBack }: ResetPasswordFormProps) {
           Authorization: `Bearer ${idToken}`,
         },
       });
-
+      if(user){
+        await user.getIdToken(true); // Refresh token to clear claims
+      }
       Swal.fire({
         icon: "success",
         title: "Password changed!",
