@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Sidebar from "./Sidebar";
+import Sidebar from "../sidebar/Sidebar";
 import { DashboardMain, Downloads, Settings, ClientsDashboard, Versioning } from "./tabs";
 import { FaDownload, FaFileAlt, FaCog } from "react-icons/fa";
 import { useDownload } from "../../hooks/useDownloads";

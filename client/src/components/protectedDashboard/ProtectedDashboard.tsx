@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, onIdTokenChanged } from "firebase/auth";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import Swal from "sweetalert2";
 import { auth, db } from "../../firebase/config";
@@ -12,34 +12,55 @@ const ProtectedDashboard: React.FC = () => {
   const [showResetForm, setShowResetForm] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
+  // Listen for both auth and token changes
+  const unsubscribeAuth = onAuthStateChanged(auth, checkUser);
+  const unsubscribeToken = onIdTokenChanged(auth, checkUser);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async function checkUser(user: any) {
+    if (!user) {
+      setAllowed(false);
+      setShowResetForm(false);
+      return;
+    }
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("email", "==", user.email));
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+      const idTokenResult = await user.getIdTokenResult();
+      if (idTokenResult.claims.firstTimeLogin) {
+        setShowResetForm(true);
         setAllowed(false);
-        Swal.fire("No autorizado", "Debes iniciar sesión.", "error");
         return;
       }
-      // Buscar por email en vez de por UID
-      console.log(user);
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", user.email));
-      const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
-        setAllowed(true);
-      } else {
-        setAllowed(false);
-        Swal.fire(
-          "Acceso denegado",
-          "No tienes permiso para acceder al dashboard.",
-          "error"
-        );
-      }
-    });
-    return () => unsubscribe();
-  }, []);
+      setAllowed(true);
+      setShowResetForm(false);
+    } else {
+      setAllowed(false);
+      setShowResetForm(false);
+      Swal.fire(
+        "Acceso denegado",
+        "No tienes permiso para acceder al dashboard.",
+        "error"
+      );
+    }
+  }
 
-  if (allowed === null) return null; // o un spinner
+  return () => {
+    unsubscribeAuth();
+    unsubscribeToken();
+  };
+}, []);
 
-  return allowed ? <Dashboard /> : showResetForm ? (<ResetPasswordForm onBack={() => setShowResetForm(false)} />) : (
+  if (allowed === null && !showResetForm) return null; // o un spinner
+
+  if (showResetForm) {
+    return <ResetPasswordForm onBack={() => setShowResetForm(false)} />;
+  }
+  console.log(allowed);
+  return allowed ? (
+    <Dashboard />
+  ) : (
     <Login onShowResetForm={() => setShowResetForm(true)} />
   );
 };

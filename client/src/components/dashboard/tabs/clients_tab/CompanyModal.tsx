@@ -1,0 +1,155 @@
+import React from "react";
+import { FaTimes, FaBuilding, FaUser } from "react-icons/fa";
+import type { NewCompanyForm } from "./types/ClientsInterfaces";
+
+interface CompanyModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: () => void;
+  form: NewCompanyForm;
+  errors: Partial<NewCompanyForm>;
+  onChange: (field: keyof NewCompanyForm, value: string) => void;
+  textClass: string;
+  cardClass: string;
+}
+
+const CompanyModal: React.FC<CompanyModalProps> = ({
+  open,
+  onClose,
+  onSubmit,
+  form,
+  errors,
+  onChange,
+  textClass,
+  cardClass,
+}) => {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50">
+      <div className={`${cardClass} rounded-lg shadow-xl w-full max-w-2xl mx-4`}>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h3 className={`text-lg font-semibold ${textClass}`}>Add New Company</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <FaTimes className="w-6 h-6" />
+          </button>
+        </div>
+        <div className="p-6 space-y-6">
+          {/* Company Information */}
+          <div>
+            <h4 className={`text-md font-medium ${textClass} mb-4 flex items-center`}>
+              <FaBuilding className="w-4 h-4 mr-2" />
+              Company Information
+            </h4>
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className={`block text-sm font-medium ${textClass} mb-1`}>
+                  Company Name
+                </label>
+                <input
+                  type="text"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    errors.companyName ? "border-red-300" : "border-gray-300"
+                  }`}
+                  value={form.companyName}
+                  onChange={e => onChange("companyName", e.target.value)}
+                />
+                {errors.companyName && (
+                  <p className="mt-1 text-sm text-red-600">{errors.companyName}</p>
+                )}
+              </div>
+              <div>
+                <label className={`block text-sm font-medium ${textClass} mb-1`}>
+                  Company Email
+                </label>
+                <input
+                  type="email"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    errors.companyEmail ? "border-red-300" : "border-gray-300"
+                  }`}
+                  value={form.companyEmail}
+                  onChange={e => onChange("companyEmail", e.target.value)}
+                />
+                {errors.companyEmail && (
+                  <p className="mt-1 text-sm text-red-600">{errors.companyEmail}</p>
+                )}
+              </div>
+            </div>
+          </div>
+          {/* Owner Information */}
+          <div>
+            <h4 className={`text-md font-medium ${textClass} mb-4 flex items-center`}>
+              <FaUser className="w-4 h-4 mr-2" />
+              Owner Information
+            </h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={`block text-sm font-medium ${textClass} mb-1`}>
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    errors.ownerFirstName ? "border-red-300" : "border-gray-300"
+                  }`}
+                  value={form.ownerFirstName}
+                  onChange={e => onChange("ownerFirstName", e.target.value)}
+                />
+                {errors.ownerFirstName && (
+                  <p className="mt-1 text-sm text-red-600">{errors.ownerFirstName}</p>
+                )}
+              </div>
+              <div>
+                <label className={`block text-sm font-medium ${textClass} mb-1`}>
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    errors.ownerLastName ? "border-red-300" : "border-gray-300"
+                  }`}
+                  value={form.ownerLastName}
+                  onChange={e => onChange("ownerLastName", e.target.value)}
+                />
+                {errors.ownerLastName && (
+                  <p className="mt-1 text-sm text-red-600">{errors.ownerLastName}</p>
+                )}
+              </div>
+            </div>
+            <div className="mt-4">
+              <label className={`block text-sm font-medium ${textClass} mb-1`}>
+                Owner Email
+              </label>
+              <input
+                type="email"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  errors.ownerEmail ? "border-red-300" : "border-gray-300"
+                }`}
+                value={form.ownerEmail}
+                onChange={e => onChange("ownerEmail", e.target.value)}
+              />
+              {errors.ownerEmail && (
+                <p className="mt-1 text-sm text-red-600">{errors.ownerEmail}</p>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onSubmit}
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+          >
+            Create Company
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CompanyModal;

@@ -15,7 +15,9 @@ import {
 } from "react-icons/fa";
 import { signOut } from "firebase/auth";
 import { auth } from "../../firebase/config";
+import Logo from "/assets/Logo.svg";
 import { useIsAdmin } from "../../hooks/useIsAdmin";
+import SidebarNavButton from "./SidebarNavButton";
 
 interface SidebarProps {
   sidebarCollapsed: boolean;
@@ -42,12 +44,11 @@ const Sidebar: React.FC<SidebarProps> = ({
   textClass,
   sidebarClass,
 }) => {
-
   const isAdmin = useIsAdmin();
 
   const handleLogout = async () => {
     await signOut(auth);
-    window.location.reload(); // O redirige a login si tienes rutas
+    window.location.reload();
   };
 
   return (
@@ -74,21 +75,13 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="flex-1 p-6">
         {/* Header with logo */}
         <div className="flex items-center justify-center mb-8">
-          <div
-            className={`flex items-center ${
-              sidebarCollapsed ? "justify-center" : "space-x-3"
-            }`}
-          >
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-400 via-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">S</span>
-            </div>
-            {!sidebarCollapsed && (
-              <span
-                className={`text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-600 to-blue-800`}
-              >
-                SAP
-              </span>
-            )}
+          <div className="flex items-center justify-center">
+            <img
+              src={Logo}
+              alt="Self Assessment Logo"
+              className="w-12 h-12"
+              style={{ minWidth: 48, minHeight: 48, width: 48, height: 48 }}
+            />
           </div>
         </div>
 
@@ -127,56 +120,36 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )}
 
-          <button
+          <SidebarNavButton
+            icon={<FaChartBar className="w-5 h-5 flex-shrink-0" />}
+            label="Dashboard"
+            active={activeTab === "dashboard"}
             onClick={() => setActiveTab("dashboard")}
-            className={`w-full flex items-center ${
-              sidebarCollapsed ? "justify-center" : "space-x-3"
-            } px-3 py-2 rounded-lg text-left transition-colors ${
-              activeTab === "dashboard"
-                ? "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700 font-medium"
-                : `${mutedTextClass} hover:bg-gray-100 ${
-                    darkMode ? "hover:bg-gray-700" : ""
-                  }`
-            }`}
-            title={sidebarCollapsed ? "Dashboard" : ""}
-          >
-            <FaChartBar className="w-5 h-5 flex-shrink-0" />
-            {!sidebarCollapsed && <span>Dashboard</span>}
-          </button>
+            sidebarCollapsed={sidebarCollapsed}
+            darkMode={darkMode}
+            mutedTextClass={mutedTextClass}
+          />
 
-          <button
+          <SidebarNavButton
+            icon={<FaTag className="w-5 h-5 flex-shrink-0" />}
+            label="Versioning"
+            active={activeTab === "versioning"}
             onClick={() => setActiveTab("versioning")}
-            className={`w-full flex items-center ${
-              sidebarCollapsed ? "justify-center" : "space-x-3"
-            } px-3 py-2 rounded-lg text-left transition-colors ${
-              activeTab === "versioning"
-                ? "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700 font-medium"
-                : `${mutedTextClass} hover:bg-gray-100 ${
-                    darkMode ? "hover:bg-gray-700" : ""
-                  }`
-            }`}
-            title={sidebarCollapsed ? "Versioning" : ""}
-          >
-            <FaTag className="w-5 h-5 flex-shrink-0" />
-            {!sidebarCollapsed && <span>Versioning</span>}
-          </button>
+            sidebarCollapsed={sidebarCollapsed}
+            darkMode={darkMode}
+            mutedTextClass={mutedTextClass}
+          />
 
-          <button
+          <SidebarNavButton
+            icon={<FaDownload className="w-5 h-5 flex-shrink-0" />}
+            label="Downloads"
+            active={activeTab === "downloads"}
             onClick={() => setActiveTab("downloads")}
-            className={`w-full flex items-center ${
-              sidebarCollapsed ? "justify-center" : "space-x-3"
-            } px-3 py-2 rounded-lg text-left transition-colors ${
-              activeTab === "downloads"
-                ? "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700 font-medium"
-                : `${mutedTextClass} hover:bg-gray-100 ${
-                    darkMode ? "hover:bg-gray-700" : ""
-                  }`
-            }`}
-            title={sidebarCollapsed ? "Downloads" : ""}
-          >
-            <FaDownload className="w-5 h-5 flex-shrink-0" />
-            {!sidebarCollapsed && <span>Downloads</span>}
-          </button>
+            sidebarCollapsed={sidebarCollapsed}
+            darkMode={darkMode}
+            mutedTextClass={mutedTextClass}
+          />
+
           {isAdmin && !sidebarCollapsed && (
             <div
               className={`text-xs font-semibold ${mutedTextClass} uppercase tracking-wider mb-3 mt-6`}
@@ -185,18 +158,15 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )}
           {isAdmin && (
-            <button
+            <SidebarNavButton
+              icon={<FaUserFriends className="w-5 h-5 flex-shrink-0" />}
+              label="Clients"
+              active={activeTab === "clients"}
               onClick={() => setActiveTab("clients")}
-              className={`w-full flex items-center ${
-                sidebarCollapsed ? "justify-center" : "space-x-3"
-              } px-3 py-2 rounded-lg text-left transition-colors ${mutedTextClass} hover:bg-gray-100 ${
-                darkMode ? "hover:bg-gray-700" : ""
-              }`}
-              title={sidebarCollapsed ? "Clients" : ""}
-            >
-              <FaUserFriends className="w-5 h-5 flex-shrink-0" />
-              {!sidebarCollapsed && <span>Clients</span>}
-            </button>
+              sidebarCollapsed={sidebarCollapsed}
+              darkMode={darkMode}
+              mutedTextClass={mutedTextClass}
+            />
           )}
 
           {!sidebarCollapsed && (
@@ -207,29 +177,25 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )}
 
-          <button
-            className={`w-full flex items-center ${
-              sidebarCollapsed ? "justify-center" : "space-x-3"
-            } px-3 py-2 rounded-lg text-left transition-colors ${mutedTextClass} hover:bg-gray-100 ${
-              darkMode ? "hover:bg-gray-700" : ""
-            }`}
-            title={sidebarCollapsed ? "Ledger" : ""}
-          >
-            <FaFileAlt className="w-5 h-5 flex-shrink-0" />
-            {!sidebarCollapsed && <span>Ledger</span>}
-          </button>
+          <SidebarNavButton
+            icon={<FaFileAlt className="w-5 h-5 flex-shrink-0" />}
+            label="Ledger"
+            active={false}
+            onClick={() => {}}
+            sidebarCollapsed={sidebarCollapsed}
+            darkMode={darkMode}
+            mutedTextClass={mutedTextClass}
+          />
 
-          <button
-            className={`w-full flex items-center ${
-              sidebarCollapsed ? "justify-center" : "space-x-3"
-            } px-3 py-2 rounded-lg text-left transition-colors ${mutedTextClass} hover:bg-gray-100 ${
-              darkMode ? "hover:bg-gray-700" : ""
-            }`}
-            title={sidebarCollapsed ? "Taxes" : ""}
-          >
-            <FaDollarSign className="w-5 h-5 flex-shrink-0" />
-            {!sidebarCollapsed && <span>Taxes</span>}
-          </button>
+          <SidebarNavButton
+            icon={<FaDollarSign className="w-5 h-5 flex-shrink-0" />}
+            label="Taxes"
+            active={false}
+            onClick={() => {}}
+            sidebarCollapsed={sidebarCollapsed}
+            darkMode={darkMode}
+            mutedTextClass={mutedTextClass}
+          />
 
           {!sidebarCollapsed && (
             <div
@@ -239,19 +205,17 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )}
 
-          <button
+          <SidebarNavButton
+            icon={<FaCog className="w-5 h-5 flex-shrink-0" />}
+            label="Settings"
+            active={activeTab === "settings"}
             onClick={() => setActiveTab("settings")}
-            className={`w-full flex items-center ${
-              sidebarCollapsed ? "justify-center" : "space-x-3"
-            } px-3 py-2 rounded-lg text-left transition-colors ${mutedTextClass} hover:bg-gray-100 ${
-              darkMode ? "hover:bg-gray-700" : ""
-            }`}
-            title={sidebarCollapsed ? "Settings" : ""}
-          >
-            <FaCog className="w-5 h-5 flex-shrink-0" />
-            {!sidebarCollapsed && <span>Settings</span>}
-          </button>
+            sidebarCollapsed={sidebarCollapsed}
+            darkMode={darkMode}
+            mutedTextClass={mutedTextClass}
+          />
 
+          {/* Dark Mode Toggle */}
           <button
             onClick={() => setDarkMode(!darkMode)}
             className={`w-full flex items-center ${

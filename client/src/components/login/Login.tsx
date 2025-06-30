@@ -21,7 +21,7 @@ export default function Login({ onShowResetForm }: { onShowResetForm: () => void
       const auth = getAuth();
       const user = auth.currentUser;
       if (user) {
-        const idTokenResult = await user.getIdTokenResult();
+        const idTokenResult = await user.getIdTokenResult(true);
         console.log(idTokenResult.claims);
         if (idTokenResult.claims.firstTimeLogin) {
           onShowResetForm();
@@ -50,7 +50,7 @@ export default function Login({ onShowResetForm }: { onShowResetForm: () => void
           <div className="flex justify-center mb-6">
             <img
               src={Logo}
-              alt="Company Logo"
+              alt="Self Assessment Logo"
               className="w-20 h-20 drop-shadow-sm"
             />
           </div>
