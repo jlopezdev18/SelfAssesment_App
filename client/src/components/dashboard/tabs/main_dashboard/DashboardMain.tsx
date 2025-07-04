@@ -5,9 +5,11 @@ import {
   FaBoxOpen,
   FaUndo,
 } from "react-icons/fa";
+import { MdOutlinePostAdd } from "react-icons/md";
 import ReleasePostModal from "./ReleasePostModal";
 import ReleasePostCarousel from "./ReleasePostCarousel";
 import type { DashboardMainProps, ReleasePost } from "./types/DashboardMainInterfaces";
+import AddReleasePostModal from "./AddReleasePostModal";
 
 const DashboardMain: React.FC<DashboardMainProps> = ({
   darkMode,
@@ -16,7 +18,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
   mutedTextClass,
 }) => {
   const [selectedPost, setSelectedPost] = useState<ReleasePost | null>(null);
-
+  const [openAddPostModal, setOpenAddPostModal] = useState(false);
   // Release posts data
   const releasePosts: ReleasePost[] = [
     {
@@ -110,6 +112,13 @@ The Development Team`,
     document.body.style.overflow = "unset";
   };
 
+  const handleAddPost = (post: ReleasePost) => {
+    // Here you would typically send the post to your backend
+    console.log("New post added:", post);
+    // For now, just close the modal
+    setOpenAddPostModal(false);
+  };
+
   const renderFullContent = (content: string) => {
     const lines = content.split('\n');
     return lines.map((line, index) => {
@@ -137,9 +146,6 @@ The Development Team`,
           <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-600 to-blue-800 mb-3">
             Dashboard
           </h1>
-          <div className="flex items-center space-x-4 text-sm text-gray-500">
-            <span>🕐 Time period:</span>
-          </div>
         </div>
         <button
           className="text-white px-6 py-3 rounded-lg text-sm font-medium transition-all hover:shadow-lg transform hover:scale-105"
@@ -147,11 +153,18 @@ The Development Team`,
             background:
               "linear-gradient(90deg, rgba(32, 174, 248, 1) 0%, rgba(10, 148, 255, 1) 54%, rgba(143, 207, 255, 1) 100%)",
           }}
+          onClick={() => setOpenAddPostModal(true)}
         >
-          Add data
+          <MdOutlinePostAdd className="inline mr-2 w-5 h-5" />
+          Add Release Post
         </button>
       </div>
-
+      {/* Add Release Post Modal */}
+      <AddReleasePostModal
+        open={openAddPostModal}
+        onClose={() => setOpenAddPostModal(false)}
+        onSubmit={handleAddPost}
+      />
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div

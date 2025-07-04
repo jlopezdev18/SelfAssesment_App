@@ -6,7 +6,6 @@ import UserModal from "./UserModal";
 import { useCompanies } from "./hooks/useCompanies";
 import { z } from "zod";
 import type {
-  Company,
   CompanyDashboardProps,
   NewCompanyForm,
   NewUserForm,
@@ -27,64 +26,6 @@ const userSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
 });
 
-const initialCompanies: Company[] = [
-  {
-    id: "1",
-    name: "Tech Solutions Inc",
-    email: "contact@techsolutions.com",
-    status: "active",
-    nextPaymentDate: "2024-02-15",
-    createdDate: "2023-01-15",
-    owner: {
-      id: "owner1",
-      firstName: "John",
-      lastName: "Doe",
-      email: "john.doe@techsolutions.com",
-      role: "owner",
-      status: "active",
-      joinedDate: "2023-01-15",
-    },
-    users: [
-      {
-        id: "user1",
-        firstName: "Jane",
-        lastName: "Smith",
-        email: "jane.smith@techsolutions.com",
-        role: "user",
-        status: "active",
-        joinedDate: "2023-02-01",
-      },
-      {
-        id: "user2",
-        firstName: "Mike",
-        lastName: "Johnson",
-        email: "mike.johnson@techsolutions.com",
-        role: "user",
-        status: "pending",
-        joinedDate: "2023-03-15",
-      },
-    ],
-  },
-  {
-    id: "2",
-    name: "Creative Agency",
-    email: "hello@creativeagency.com",
-    status: "pending",
-    nextPaymentDate: "2024-02-20",
-    createdDate: "2023-12-01",
-    owner: {
-      id: "owner2",
-      firstName: "Sarah",
-      lastName: "Wilson",
-      email: "sarah.wilson@creativeagency.com",
-      role: "owner",
-      status: "active",
-      joinedDate: "2023-12-01",
-    },
-    users: [],
-  },
-];
-
 const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
   cardClass,
   textClass,
@@ -104,9 +45,9 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
   const [newCompanyForm, setNewCompanyForm] = useState<NewCompanyForm>({
     companyName: "",
     companyEmail: "",
-    ownerFirstName: "",
-    ownerLastName: "",
-    ownerEmail: "",
+    firstName: "",
+    lastName: "",
+    email: "",
   });
   const [newUserForm, setNewUserForm] = useState<NewUserForm>({
     firstName: "",
@@ -117,12 +58,12 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
   const [userFormErrors, setUserFormErrors] = useState<Partial<NewUserForm>>({});
 
   // Use custom hook for company logic
-  const { companies, addCompany, addUserToCompany } = useCompanies(initialCompanies);
+  const { companies, addCompany, addUserToCompany } = useCompanies([]);
 
   const filteredCompanies = companies.filter((company) => {
     const matchesSearch =
-      company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      company.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      company.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      company.companyEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
       company.owner.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       company.owner.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       company.users.some((user) =>
@@ -193,9 +134,9 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
     setNewCompanyForm({
       companyName: "",
       companyEmail: "",
-      ownerFirstName: "",
-      ownerLastName: "",
-      ownerEmail: "",
+      firstName: "",
+      lastName: "",
+      email: "",
     });
     setCompanyFormErrors({});
   };
@@ -297,7 +238,7 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
-
+ console.log(companies);
   const totalPages = Math.ceil(filteredCompanies.length / rowsPerPage);
 
   return (

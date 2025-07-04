@@ -18,6 +18,7 @@ import { auth } from "../../firebase/config";
 import Logo from "/assets/Logo.svg";
 import { useIsAdmin } from "../../hooks/useIsAdmin";
 import SidebarNavButton from "./SidebarNavButton";
+import { useAuthState } from "react-firebase-hooks/auth";
 
 interface SidebarProps {
   sidebarCollapsed: boolean;
@@ -45,6 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   sidebarClass,
 }) => {
   const isAdmin = useIsAdmin();
+  const [user] = useAuthState(auth);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -99,12 +101,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                   "linear-gradient(90deg, rgba(32, 174, 248, 1) 0%, rgba(10, 148, 255, 1) 54%, rgba(143, 207, 255, 1) 100%)",
               }}
             >
-              HN
+              {(user?.displayName?.[0] || user?.email?.[0] || 'U').toUpperCase()}
             </div>
             {!sidebarCollapsed && (
               <div>
-                <h3 className={`font-semibold ${textClass}`}>Harper Nelson</h3>
-                <p className={`text-sm ${mutedTextClass}`}>Admin Manager</p>
+                <h3 className={`font-semibold ${textClass}`}>{user?.displayName || user?.email?.split('@')[0] || "User"}</h3>
               </div>
             )}
           </div>

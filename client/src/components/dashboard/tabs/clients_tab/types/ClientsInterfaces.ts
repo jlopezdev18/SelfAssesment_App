@@ -9,6 +9,8 @@ export interface User {
 }
 
 export interface Company {
+  companyEmail: any;
+  companyName: any;
   id: string;
   name: string;
   email: string;
@@ -29,9 +31,9 @@ export interface CompanyDashboardProps {
 export interface NewCompanyForm {
   companyName: string;
   companyEmail: string;
-  ownerFirstName: string;
-  ownerLastName: string;
-  ownerEmail: string;
+  firstName: string;
+  lastName: string;
+  email: string;
 }
 
 export interface NewUserForm {

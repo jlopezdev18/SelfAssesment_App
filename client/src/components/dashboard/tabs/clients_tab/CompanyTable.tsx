@@ -105,7 +105,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
                     <div className="flex items-center">
                       <FaBuilding className="w-4 h-4 mr-2 text-blue-500" />
                       <div>
-                        <div className={`font-medium ${textClass}`}>{company.name}</div>
+                        <div className={`font-medium ${textClass}`}>{company.companyName}</div>
                         <div className={`text-sm ${mutedTextClass}`}>
                           {totalUsers} user{totalUsers !== 1 ? "s" : ""}
                         </div>
@@ -113,13 +113,13 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
                     </div>
                   </td>
                   <td className={`px-6 py-4 whitespace-nowrap ${mutedTextClass}`}>
-                    <div className={`text-sm ${mutedTextClass}`}>{company.email}</div>
+                    <div className={`text-sm ${mutedTextClass}`}>{company.companyEmail}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  {/* <td className="px-6 py-4 whitespace-nowrap">
                     <span className={getStatusBadge(company.status)}>
                       {company.status.charAt(0).toUpperCase() + company.status.slice(1)}
                     </span>
-                  </td>
+                  </td> */}
                   <td className={`px-6 py-4 whitespace-nowrap text-sm ${textClass}`}>
                     {company.nextPaymentDate && formatDate(company.nextPaymentDate)}
                   </td>
@@ -179,14 +179,14 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
                       <td className={`px-6 py-3 whitespace-nowrap ${mutedTextClass}`}>
                         <div className={`text-sm ${mutedTextClass}`}>{company.owner.email}</div>
                       </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
+                      {/* <td className="px-6 py-3 whitespace-nowrap">
                         <span className={getStatusBadge(company.owner.status)}>
                           {company.owner.status.charAt(0).toUpperCase() + company.owner.status.slice(1)}
                         </span>
-                      </td>
-                      <td className={`px-6 py-3 whitespace-nowrap text-sm ${textClass}`}>
+                      </td> */}
+                      {/* <td className={`px-6 py-3 whitespace-nowrap text-sm ${textClass}`}>
                         {formatDate(company.owner.joinedDate)}
-                      </td>
+                      </td> */}
                       <td className={`px-6 py-3 whitespace-nowrap text-center ${textClass}`}>
                         <button className={`p-2 hover:${darkMode ? "bg-gray-700" : "bg-gray-100"} rounded-full`}>
                           <SlOptionsVertical className="w-3 h-3 text-gray-400" />

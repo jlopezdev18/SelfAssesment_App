@@ -21,3 +21,17 @@ export const getUsersWithRoleUser = async (req: Request, res: Response): Promise
     return res.status(500).json({ error: err.message });
   }
 };
+
+export const getUserByUid = async (req: Request, res: Response):Promise<any> => {
+  const { uid } = req.params;
+  try {
+    const userDoc = await admin.firestore().collection("users").doc(uid).get();
+    if (!userDoc.exists) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.status(200).json({ id: userDoc.id, ...userDoc.data() });
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    res.status(500).json({ error: "Failed to fetch user" });
+  }
+};
