@@ -1,17 +1,14 @@
-// hooks/useDownload.ts
 import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
-import { ref, getDownloadURL } from "firebase/storage";
-import { db, storage } from "../firebase/config"; // Asegúrate de que estén correctamente configurados
+import { ref, getDownloadURL, listAll, getMetadata } from "firebase/storage";
+import { storage } from "../firebase/config";
+import type { DownloadItem } from "../components/dashboard/tabs/download_tab/types/DownloadInterfaces";
 
-interface DownloadItem {
-  name: string;
-  type: "installers" | "documents" | "resources";
-  size: string;
-  version?: string;
-  description: string;
-  path: string;
-  downloadUrl: string;
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
 export const useDownload = () => {
@@ -19,45 +16,42 @@ export const useDownload = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDownloads = async () => {
+    const fetchAllStorageFiles = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "downloads"));
+        const folders: DownloadItem["type"][] = [
+          "installers",
+          "updates",
+          "resources",
+          "documents",
+        ];
         const items: DownloadItem[] = [];
-        for (const doc of querySnapshot.docs) {
-          const data = doc.data();
-          if (!data.path) {
-            console.warn(
-              `Documento ${doc.id} tiene un 'path' inválido:`,
-              data.path
-            );
-            continue; // saltar ese documento
-          }
-          try {
-            const fileRef = ref(storage, data.path);
-            const url = await getDownloadURL(fileRef);
+
+        for (const folder of folders) {
+          const folderRef = ref(storage, `downloads/${folder}`);
+          const res = await listAll(folderRef);
+
+          for (const itemRef of res.items) {
+            const url = await getDownloadURL(itemRef);
+            const metadata = await getMetadata(itemRef);
             items.push({
-              name: data.name,
-              type: data.type,
-              size: data.size,
-              version: data.version,
-              description: data.description,
-              path: data.path,
+              name: itemRef.name,
+              type: folder,
+              size: formatBytes(metadata.size || 0),
+              path: `downloads/${folder}/${itemRef.name}`,
               downloadUrl: url,
             });
-          } catch (err) {
-            console.error(`Error obteniendo URL de ${data.path}:`, err);
           }
         }
 
         setDownloads(items);
       } catch (error) {
-        console.error("Error fetching downloads:", error);
+        console.error("Error fetching files from storage:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDownloads();
+    fetchAllStorageFiles();
   }, []);
 
   return { downloads, loading };

@@ -30,19 +30,27 @@ export const createCompany = async (
   const displayName = `${firstName} ${lastName}`;
   const password = generateRandomPassword();
 
+  let user;
   try {
     // 1. Crear usuario en Firebase Auth
-    const user = await admin
-      .auth()
-      .createUser({ email, password, displayName });
+    user = await admin.auth().createUser({ email, password, displayName });
 
-    // 2. Agregar custom claims
+    // 2. Enviar email al usuario con su contraseña
+    try {
+      await sendEmailToMainUser(email, password);
+    } catch (emailError) {
+      // Si el email falla, elimina el usuario creado en Auth
+      await admin.auth().deleteUser(user.uid);
+      return res.status(500).json({ error: "No se pudo enviar el correo al usuario. Intenta de nuevo." });
+    }
+
+    // 3. Agregar custom claims
     await admin.auth().setCustomUserClaims(user.uid, {
       firstTimeLogin: true,
       passwordCreatedAt: Date.now(),
     });
 
-    // 3. Guardar usuario en colección "users"
+    // 4. Guardar usuario en colección "users"
     await admin.firestore().collection("users").doc(user.uid).set({
       email,
       displayName,
@@ -54,7 +62,7 @@ export const createCompany = async (
       nextPaymentDate: null,
     });
 
-    // 4. Crear compañía en colección "companies"
+    // 5. Crear compañía en colección "companies"
     const newCompany = {
       companyName,
       companyEmail,
@@ -65,18 +73,16 @@ export const createCompany = async (
         email,
         uid: user.uid,
       },
-      users: [user.uid], // usuario dueño como primer miembro
     };
 
     const companyRef = await admin
       .firestore()
       .collection("companies")
       .add(newCompany);
+
     await admin.firestore().collection("users").doc(user.uid).update({
       companyId: companyRef.id,
     });
-    // 5. Enviar email al usuario con su contraseña
-    await sendEmailToMainUser(email, password);
 
     return res.status(200).json({
       message: "User and company created successfully. Email sent.",
@@ -89,3 +95,155 @@ export const createCompany = async (
     return res.status(500).json({ error: err.message });
   }
 };
+
+export const addUserToCompany = async (req: Request, res: Response): Promise<any> => {
+  const { companyId, email, firstName, lastName } = req.body;
+
+  if (!companyId || !email || !firstName || !lastName) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  try {
+    // 1. Create user in Firebase Auth
+    let userRecord;
+  
+    try {
+      userRecord = await admin.auth().getUserByEmail(email);
+    } catch {
+      // If user does not exist, create one
+      const password = generateRandomPassword();
+      userRecord = await admin.auth().createUser({
+        email,
+        password,
+        displayName: `${firstName} ${lastName}`,
+      });
+      // Optionally send email with password here
+      await sendEmailToMainUser(email, password);
+      
+    }
+
+    // 2. Add custom claims for firstTimeLogin
+    await admin.auth().setCustomUserClaims(userRecord.uid, {
+      firstTimeLogin: true,
+      passwordCreatedAt: Date.now(),
+    });
+
+    // 3. Add user to Firestore "users" collection if not exists
+    const userDoc = await admin.firestore().collection("users").doc(userRecord.uid).get();
+    if (!userDoc.exists) {
+      await admin.firestore().collection("users").doc(userRecord.uid).set({
+        email,
+        displayName: `${firstName} ${lastName}`,
+        firstName,
+        lastName,
+        role: "user",
+        status: "active",
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        companyId,
+      });
+    } else {
+      await admin.firestore().collection("users").doc(userRecord.uid).update({
+        companyId,
+      });
+    }
+
+    // 4. Add user UID to company's users array
+    await admin.firestore().collection("companies").doc(companyId).update({
+      users: admin.firestore.FieldValue.arrayUnion(userRecord.uid),
+    });
+
+    return res.status(200).json({
+      message: "User added to company successfully.",
+      userId: userRecord.uid,
+      companyId,
+    });
+  } catch (err: any) {
+    console.error("Error adding user to company:", err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+export const deleteCompany = async (req: Request, res: Response): Promise<any> => {
+  const { companyId } = req.params;
+  console.log(companyId);
+
+   if (!companyId || companyId.trim() === '')  {
+    return res.status(400).json({ error: "Company ID is required" });
+  }
+
+  try {
+    // 1. Logic delete company: set 'deleted' field to true
+    await admin.firestore().collection("companies").doc(companyId).update({
+      deleted: true,
+      deletedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    // 2. Logic delete users: set 'deleted' field to true for users in this company
+    const usersSnapshot = await admin.firestore().collection("users").where("companyId", "==", companyId).get();
+    const batch = admin.firestore().batch();
+    usersSnapshot.forEach((doc) => {
+      batch.update(doc.ref, { 
+        deleted: true,
+        deletedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+    await batch.commit();
+
+    return res.status(200).json({ message: "Company and related users deleted." });
+  } catch (err: any) {
+    console.error("Error deleting company:", err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+// export const sendNotificationToCompany = async (req: Request, res: Response): Promise<any> => {
+//   const { companyId, title, body } = req.body;
+
+//   if (!companyId || !title || !body) {
+//     return res.status(400).json({ error: "All fields are required" });
+//   }
+
+//   try {
+//     const companyDoc = await admin.firestore().collection("companies").doc(companyId).get();
+//     if (!companyDoc.exists) {
+//       return res.status(404).json({ error: "Company not found" });
+//     }
+
+//     const companyData = companyDoc.data();
+//     if (!companyData || !companyData.users || companyData.users.length === 0) {
+//       return res.status(404).json({ error: "No users found in this company" });
+//     }
+
+//     const tokens = await Promise.all(
+//       companyData.users.map(async (userId: string) => {
+//         const userDoc = await admin.firestore().collection("users").doc(userId).get();
+//         return userDoc.exists ? userDoc.data()?.fcmToken : null;
+//       })
+//     );
+
+//     const validTokens = tokens.filter((token) => token !== null);
+
+//     if (validTokens.length === 0) {
+//       return res.status(404).json({ error: "No valid FCM tokens found for users" });
+//     }
+
+//     const message = {
+//       notification: {
+//         title,
+//         body,
+//       },
+//       tokens: validTokens,
+//     };
+
+//     const response = await admin.messaging().sendMulticast(message);
+    
+//     return res.status(200).json({
+//       message: "Notification sent successfully",
+//       successCount: response.successCount,
+//       failureCount: response.failureCount,
+//     });
+//   } catch (err: any) {
+//     console.error("Error sending notification:", err);
+//     return res.status(500).json({ error: err.message });
+//   }
+// }

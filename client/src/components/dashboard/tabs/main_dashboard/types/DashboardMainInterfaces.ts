@@ -1,13 +1,10 @@
 export interface ReleasePost {
   id: number;
   title: string;
-  description: string;
   fullContent: string;
-  date: string;
-  version: string;
+  date: { _seconds: number; _nanoseconds: number };
   image: string;
-  category: string;
-  author: string;
+  version: string;
   tags: string[];
 }
 

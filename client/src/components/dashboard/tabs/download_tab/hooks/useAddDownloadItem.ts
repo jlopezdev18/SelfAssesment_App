@@ -1,8 +1,16 @@
 import { useState } from "react";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL, getMetadata } from "firebase/storage";
 import { db, storage } from "../../../../../firebase/config";
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc, collection, updateDoc } from "firebase/firestore";
 import type { DownloadItem } from "../types/DownloadInterfaces";
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+}
 
 export function useAddDownloadItem(onAddItem?: (item: DownloadItem) => void) {
   const [uploading, setUploading] = useState(false);
@@ -14,8 +22,8 @@ export function useAddDownloadItem(onAddItem?: (item: DownloadItem) => void) {
     resetForm: () => void
   ) => {
     setUploadError(null);
-    if (!newItem.name || !newItem.description || !newItem.size || !file) {
-      setUploadError("Please fill all required fields and select a file.");
+    if (!file) {
+      setUploadError("Please select a file.");
       return;
     }
     setUploading(true);
@@ -24,20 +32,32 @@ export function useAddDownloadItem(onAddItem?: (item: DownloadItem) => void) {
       const storageRef = ref(storage, path);
       await uploadBytes(storageRef, file);
       const downloadUrl = await getDownloadURL(storageRef);
+      const metadata = await getMetadata(storageRef);
 
-      await addDoc(collection(db, "downloads"), {
-        name: newItem.name,
-        description: newItem.description,
+      // Get size from metadata and version from newItem (if exists)
+      const size = formatBytes(metadata.size || file.size || 0);
+      const updated = metadata.updated
+        ? new Date(metadata.updated).toLocaleString()
+        : new Date().toLocaleString();
+
+      const docRef = await addDoc(collection(db, "downloads"), {
+        id: "",
+        name: file.name,
         path,
         type: newItem.type,
-        version: newItem.version || "",
-        size: newItem.size,
+        updated,
+        size,
       });
+      
+      await updateDoc(docRef, { id: docRef.id });
 
       const itemToAdd = {
         ...newItem,
+        id: docRef.id,
+        name: file.name,
+        size,
+        updated,
         downloadUrl,
-        version: newItem.version || undefined,
       };
 
       if (onAddItem) onAddItem(itemToAdd);

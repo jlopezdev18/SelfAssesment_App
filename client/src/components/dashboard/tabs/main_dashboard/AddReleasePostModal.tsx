@@ -54,10 +54,11 @@ The Development Team`,
       ...form,
       tags: tagsArray,
       id: 0,
-      date: "",
+      date: {
+        _seconds: Math.floor(Date.now() / 1000),
+        _nanoseconds: 0,
+      },
       image: "",
-      category: "",
-      author: "",
     });
     onClose();
   };

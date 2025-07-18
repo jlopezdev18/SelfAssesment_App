@@ -23,4 +23,5 @@ export interface VersioningProps {
   textClass: string;
   mutedTextClass: string;
   darkMode: boolean;
+  isAdmin: boolean;
 }

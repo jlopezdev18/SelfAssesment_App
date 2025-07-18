@@ -1,15 +1,21 @@
-import sgMail from '@sendgrid/mail';
-import dotenv from 'dotenv';
+import nodemailer from "nodemailer";
+import dotenv from "dotenv";
 
-dotenv.config(); 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+dotenv.config();
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.MAIL_USER,
+    pass: process.env.MAIL_PASS,
+  },
+});
 
 export async function sendEmailToUser(email: string, password: string) {
   const msg = {
-  to: email,
-  from: process.env.MAIL_USER!,
-  subject: 'Welcome to Self Assesment! Your Temporary Password Inside 🚀',
-  html: `
+    to: email,
+    from: process.env.MAIL_USER!,
+    subject: "Welcome to Self Assesment! Your Temporary Password Inside 🚀",
+    html: `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border:1px solid #ddd; border-radius:8px; padding: 20px; background: #f9f9f9;">
       <div style="text-align: center;">
         <img src="https://selfassesmentapp.netlify.app/assets/Logo.svg" alt="Self Assesment Logo" style="width:120px; margin-bottom: 20px;" />
@@ -35,12 +41,18 @@ export async function sendEmailToUser(email: string, password: string) {
       </p>
     </div>
   `,
-};
+  };
 
-  await sgMail.send(msg);
+  await transporter.sendMail(msg);
 }
 
-export async function sendReleaseEmailToAllUsers(email: string, title: string, description: string, fullContent: string, version: string, tags: string[]) {
+export async function sendReleaseEmailToAllUsers(
+  email: string | undefined,
+  title: string,
+  fullContent: string,
+  version: string,
+  tags: string[]
+) {
   const msg = {
     to: email,
     from: process.env.MAIL_USER!,
@@ -48,7 +60,6 @@ export async function sendReleaseEmailToAllUsers(email: string, title: string, d
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border:1px solid #ddd; border-radius:8px; padding: 20px; background: #f9f9f9;">
         <h2 style="color: #333;">New Release: ${title}</h2>
-        <p style="font-size: 16px; color: #555;">${description}</p>
         <h3 style="color: #333;">Full Content</h3>
         <p style="font-size: 16px; color: #555;">${fullContent}</p>
         <p style="font-size: 16px; color: #555;">
@@ -61,15 +72,15 @@ export async function sendReleaseEmailToAllUsers(email: string, title: string, d
     `,
   };
 
-  await sgMail.send(msg);
+  await transporter.sendMail(msg);
 }
 
-export async function sendEmailToMainUser(email: string, password:string){
+export async function sendEmailToMainUser(email: string, password: string) {
   const msg = {
-  to: email,
-  from: process.env.MAIL_USER!,
-  subject: 'Welcome to Self Assesment!',
-  html: `
+    to: email,
+    from: process.env.MAIL_USER!,
+    subject: "Welcome to Self Assesment!",
+    html: `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border:1px solid #ddd; border-radius:8px; padding: 20px; background: #f9f9f9;">
       <div style="text-align: center;">
         <img src="https://selfassesmentapp.netlify.app/assets/Logo.svg" alt="Self Assesment Logo" style="width:120px; margin-bottom: 20px;" />
@@ -95,7 +106,7 @@ export async function sendEmailToMainUser(email: string, password:string){
       </p>
     </div>
   `,
-};
+  };
 
-  await sgMail.send(msg);
+  await transporter.sendMail(msg);
 }

@@ -1,6 +1,7 @@
 import React from "react";
 import { FaTimes } from "react-icons/fa";
 import type { NewUserForm, Company } from "./types/ClientsInterfaces";
+import PulseLoader from "react-spinners/PulseLoader";
 
 interface UserModalProps {
   open: boolean;
@@ -13,6 +14,7 @@ interface UserModalProps {
   companies: Company[];
   textClass: string;
   cardClass: string;
+  loading: boolean;
 }
 
 const UserModal: React.FC<UserModalProps> = ({
@@ -26,6 +28,7 @@ const UserModal: React.FC<UserModalProps> = ({
   companies,
   textClass,
   cardClass,
+  loading
 }) => {
   if (!open) return null;
   return (
@@ -108,7 +111,13 @@ const UserModal: React.FC<UserModalProps> = ({
             onClick={onSubmit}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
           >
-            Add User
+             {loading ? (
+                <>
+                  <PulseLoader color="#fff" size={8} />
+                </>
+              ) : (
+                "Add User"
+              )}
           </button>
         </div>
       </div>

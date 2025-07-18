@@ -10,23 +10,33 @@ import Swal from "sweetalert2";
 
 export function useCompanies(initialCompanies: Company[]) {
   const [companies, setCompanies] = useState<Company[]>(initialCompanies);
+  const [loading, setLoading] = useState<boolean>(false);
+
   const fetchCompanies = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get("http://localhost:4000/api/company/companies");
+      const response = await axios.get(
+        "http://localhost:4000/api/company/companies"
+      );
       const companies = response.data as Company[];
+      const activeCompanies = companies.filter(company => !company.deleted);
+
 
       const companiesWithUsers = await Promise.all(
-        companies.map(async (company) => {
+        activeCompanies.map(async (company) => {
           const userIds = company.users as User[];
 
-          const users = await Promise.all(
-            userIds.map(async (uid) => {
-              const res = await axios.get(
-                `http://localhost:4000/api/users/${uid}`
-              );
-              return res.data as User;
-            })
-          );
+          let users: User[] = [];
+          if (userIds && userIds.length > 0) {
+            users = await Promise.all(
+              userIds.map(async (uid) => {
+                const res = await axios.get(
+                  `http://localhost:4000/api/users/${uid}`
+                );
+                return res.data as User;
+              })
+            );
+          }
 
           return { ...company, users };
         })
@@ -35,6 +45,8 @@ export function useCompanies(initialCompanies: Company[]) {
       setCompanies(companiesWithUsers);
     } catch (error) {
       console.error("Error fetching companies:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -47,6 +59,7 @@ export function useCompanies(initialCompanies: Company[]) {
     onSuccess: () => void,
     onError: () => void
   ) => {
+    setLoading(true);
     try {
       const response = await axios.post(
         "http://localhost:4000/api/company/create-company",
@@ -61,6 +74,7 @@ export function useCompanies(initialCompanies: Company[]) {
         timer: 2000,
         showConfirmButton: false,
       });
+      fetchCompanies(); // Refresh the list of companies
     } catch {
       onError();
       Swal.fire({
@@ -68,6 +82,8 @@ export function useCompanies(initialCompanies: Company[]) {
         title: "Error",
         text: "Error creating company in database.",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -77,9 +93,10 @@ export function useCompanies(initialCompanies: Company[]) {
     onSuccess: () => void,
     onError: () => void
   ) => {
+    setLoading(true);
     try {
       const response = await axios.post(
-        "http://localhost:4000/api/add-user-to-company",
+        "http://localhost:4000/api/company/add-user-to-company",
         { companyId, ...form }
       );
       setCompanies((prev) =>
@@ -90,6 +107,7 @@ export function useCompanies(initialCompanies: Company[]) {
         )
       );
       onSuccess();
+      fetchCompanies(); // Refresh the list of companies
       Swal.fire({
         icon: "success",
         title: "User added!",
@@ -104,14 +122,72 @@ export function useCompanies(initialCompanies: Company[]) {
         title: "Error",
         text: "Error adding user to company.",
       });
+    } finally {
+      setLoading(false);
     }
   };
+
+ const deleteCompany = async (companyId: string, onError: () => void) => {
+  setLoading(true);
+  try {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "This will deactivate the company and all its users!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!'
+    });
+    if (!result.isConfirmed) {
+      setLoading(false);
+      return;
+    }
+    const response = await axios.delete(
+      `http://localhost:4000/api/company/delete-company/${companyId}`,
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (response.status === 200) {
+      setCompanies((prev) =>
+        prev.map((company) => 
+          company.id === companyId 
+            ? { ...company, status: 'inactive', deleted: true }
+            : company
+        )
+      );
+      await Swal.fire({
+        icon: "success",
+        title: "Company deactivated!",
+        text: "The company has been deactivated successfully.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      await fetchCompanies();
+    }
+  } catch  {
+    onError();
+     Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Error deleting company.",
+      });
+  } finally {
+    setLoading(false);
+  }
+};
 
   return {
     companies,
     setCompanies,
     addCompany,
+    deleteCompany,
     addUserToCompany,
     fetchCompanies,
+    loading,
   };
 }

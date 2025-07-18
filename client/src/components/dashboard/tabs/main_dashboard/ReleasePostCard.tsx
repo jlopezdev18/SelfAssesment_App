@@ -5,7 +5,7 @@ import type { ReleasePost } from "./types/DashboardMainInterfaces";
 interface ReleasePostCardProps {
   post: ReleasePost;
   onClick: (post: ReleasePost) => void;
-  formatDate: (date: string) => string;
+  formatDate: (dateObj: { _seconds: number; _nanoseconds: number }) => string;
 }
 
 const ReleasePostCard: React.FC<ReleasePostCardProps> = ({ post, onClick, formatDate }) => (
@@ -20,15 +20,9 @@ const ReleasePostCard: React.FC<ReleasePostCardProps> = ({ post, onClick, format
           {post.version}
         </span>
       </div>
-      <div className="absolute top-2 right-2">
-        <span className="bg-white/90 text-xs px-2 py-1 rounded-full text-green-600 font-medium">
-          {post.category}
-        </span>
-      </div>
     </div>
     <div className="p-6">
       <h4 className="font-semibold text-gray-900 mb-3 line-clamp-2 text-base">{post.title}</h4>
-      <p className="text-gray-600 text-sm mb-4 line-clamp-3">{post.description}</p>
       <div className="flex items-center justify-between text-sm text-gray-500">
         <div className="flex items-center space-x-1">
           <FaCalendar className="w-3 h-3" />

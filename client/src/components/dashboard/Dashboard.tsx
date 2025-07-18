@@ -3,6 +3,7 @@ import Sidebar from "../sidebar/Sidebar";
 import { DashboardMain, Downloads, Settings, ClientsDashboard, Versioning } from "./tabs";
 import { FaDownload, FaFileAlt, FaCog } from "react-icons/fa";
 import { useDownload } from "../../hooks/useDownloads";
+import { useIsAdmin } from "../../hooks/useIsAdmin";
 
 const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"dashboard" | "downloads" | "settings" | "versioning" | "clients">("dashboard");
@@ -11,6 +12,8 @@ const Dashboard: React.FC = () => {
 
   const { downloads: downloadItems, loading } = useDownload();
 
+
+  const isAdmin = useIsAdmin();
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -78,6 +81,7 @@ const Dashboard: React.FC = () => {
               textClass={textClass}
               mutedTextClass={mutedTextClass}
               darkMode={darkMode}
+              isAdmin={isAdmin}
             />
           )}
           {activeTab === "settings" && <Settings darkMode={darkMode} />}

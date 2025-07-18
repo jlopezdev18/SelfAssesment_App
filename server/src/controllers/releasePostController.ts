@@ -2,14 +2,41 @@ import { Request, Response } from "express";
 import admin from "../firebase";
 import { sendReleaseEmailToAllUsers } from "../utils/email";
 
-export const addReleasePost = async (req: Request, res: Response): Promise<any> => {
+export const getReleasePosts = async (
+  _req: Request,
+  res: Response
+): Promise<any> => {
   try {
-    const { title, description, fullContent, version, tags } = req.body;
+    const snapshot = await admin
+      .firestore()
+      .collection("releasePosts")
+      .orderBy("date", "desc")
+      .get();
+    const posts = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    res.status(200).json(posts);
+  } catch (error) {
+    console.error("Error fetching release posts:", error);
+    res.status(500).json({ error: "Failed to fetch release posts." });
+  }
+};
 
+export const addReleasePost = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const { title, fullContent, version, tags } = req.body;
+    if (!title || !fullContent) {
+      return res
+        .status(400)
+        .json({ error: "Title, fullContent, and version are required." });
+    }
     // Add the release post to the database
     const postRef = await admin.firestore().collection("releasePosts").add({
       title,
-      description,
       fullContent,
       version,
       tags,
@@ -18,15 +45,22 @@ export const addReleasePost = async (req: Request, res: Response): Promise<any> 
     });
 
     // Fetch all users
-    const usersSnapshot = await admin.firestore().collection("users").get();
-    const userEmails = usersSnapshot.docs.map((doc) => doc.data().email);
+    const authUsers = await admin.auth().listUsers();
+    const userEmails = authUsers.users
+      .filter((user) => user.email)
+      .map((user) => user.email);
 
     // Send the post to all users (e.g., via  email)
     userEmails.forEach((email) => {
-      sendReleaseEmailToAllUsers(email, title, description, fullContent, version, tags);
+      sendReleaseEmailToAllUsers(email, title, fullContent, version, tags);
     });
 
-    res.status(201).json({ id: postRef.id, message: "Release post added and sent to users." });
+    res
+      .status(201)
+      .json({
+        id: postRef.id,
+        message: "Release post added and sent to users.",
+      });
   } catch (error) {
     console.error("Error adding release post:", error);
     res.status(500).json({ error: "Failed to add release post." });

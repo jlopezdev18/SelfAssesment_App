@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { HiOutlineLockClosed, HiOutlineMail } from "react-icons/hi";
 import Logo from "/assets/Logo.svg";
-import SocialLoginButtons from "./SocialLoginButtons";
 import { loginWithEmail } from "../../firebase/auth";
 import { getAuth } from "firebase/auth";
 
@@ -154,15 +153,6 @@ export default function Login({ onShowResetForm }: { onShowResetForm: () => void
                 ) : null}
                 {isLoading ? "Signing in..." : "Sign in"}
               </button>
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="bg-white px-2 text-gray-500">or</span>
-                </div>
-              </div>
-              <SocialLoginButtons />
             </div>
           </div>
         </div>

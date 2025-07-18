@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FaBuilding, FaSearch, FaBell, FaBan, FaTrash } from "react-icons/fa";
+import { FaBuilding, FaSearch, FaBell, FaTrash } from "react-icons/fa";
 import CompanyTable from "./CompanyTable";
 import CompanyModal from "./CompanyModal";
 import UserModal from "./UserModal";
@@ -10,14 +10,15 @@ import type {
   NewCompanyForm,
   NewUserForm,
 } from "./types/ClientsInterfaces";
+import ClipLoader from "react-spinners/ClipLoader";
 
 // Zod schemas for validation
 const companySchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
   companyEmail: z.string().email("Please enter a valid email address"),
-  ownerFirstName: z.string().min(1, "Owner first name is required"),
-  ownerLastName: z.string().min(1, "Owner last name is required"),
-  ownerEmail: z.string().email("Please enter a valid email address"),
+  firstName: z.string().min(1, "Owner first name is required"),
+  lastName: z.string().min(1, "Owner last name is required"),
+  email: z.string().email("Please enter a valid email address"),
 });
 
 const userSchema = z.object({
@@ -41,7 +42,9 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [openCompanyModal, setOpenCompanyModal] = useState(false);
   const [openUserModal, setOpenUserModal] = useState(false);
-  const [selectedCompanyForUser, setSelectedCompanyForUser] = useState<string | null>(null);
+  const [selectedCompanyForUser, setSelectedCompanyForUser] = useState<
+    string | null
+  >(null);
   const [newCompanyForm, setNewCompanyForm] = useState<NewCompanyForm>({
     companyName: "",
     companyEmail: "",
@@ -54,22 +57,32 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
     lastName: "",
     email: "",
   });
-  const [companyFormErrors, setCompanyFormErrors] = useState<Partial<NewCompanyForm>>({});
-  const [userFormErrors, setUserFormErrors] = useState<Partial<NewUserForm>>({});
+  const [companyFormErrors, setCompanyFormErrors] = useState<
+    Partial<NewCompanyForm>
+  >({});
+  const [userFormErrors, setUserFormErrors] = useState<Partial<NewUserForm>>(
+    {}
+  );
 
   // Use custom hook for company logic
-  const { companies, addCompany, addUserToCompany } = useCompanies([]);
+  const { companies, addCompany, addUserToCompany, deleteCompany, loading } = useCompanies([]);
 
   const filteredCompanies = companies.filter((company) => {
     const matchesSearch =
-      company.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      company.companyEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      company.owner.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      company.owner.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      company.users.some((user) =>
-        user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      company.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      company.companyEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      company.owner?.firstName
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      company.owner?.lastName
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      company.users?.some(
+        (user) =>
+          user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+          
       );
     const matchesFilter =
       filterStatus === "all" || company.status === filterStatus;
@@ -158,7 +171,10 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
     setUserFormErrors({});
   };
 
-  const handleCompanyFormChange = (field: keyof NewCompanyForm, value: string) => {
+  const handleCompanyFormChange = (
+    field: keyof NewCompanyForm,
+    value: string
+  ) => {
     setNewCompanyForm((prev) => ({
       ...prev,
       [field]: value,
@@ -193,7 +209,8 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
     } else {
       const errors: Partial<NewCompanyForm> = {};
       result.error.errors.forEach((err) => {
-        if (err.path[0]) errors[err.path[0] as keyof NewCompanyForm] = err.message;
+        if (err.path[0])
+          errors[err.path[0] as keyof NewCompanyForm] = err.message;
       });
       setCompanyFormErrors(errors);
       return false;
@@ -217,11 +234,7 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
 
   const handleCompanySubmit = async () => {
     if (!validateCompanyForm()) return;
-    addCompany(
-      newCompanyForm,
-      handleCloseCompanyModal,
-      () => {}
-    );
+    addCompany(newCompanyForm, handleCloseCompanyModal, () => {});
   };
 
   const handleUserSubmit = async () => {
@@ -234,11 +247,18 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
     );
   };
 
+  const handleDeleteSelectedCompany = () => {
+    selectedCompanies.forEach((companyId) => {
+      deleteCompany(companyId, () => {});
+    });
+    setSelectedCompanies([]);
+  };
+
   const paginatedCompanies = filteredCompanies.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
- console.log(companies);
+
   const totalPages = Math.ceil(filteredCompanies.length / rowsPerPage);
 
   return (
@@ -269,7 +289,9 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
         </div>
 
         {/* Search and Filter */}
-        <div className={`${cardClass} rounded-lg shadow-sm border border-gray-200 p-4 mb-6`}>
+        <div
+          className={`${cardClass} rounded-lg shadow-sm border border-gray-200 p-4 mb-6`}
+        >
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -309,11 +331,7 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
                 <FaBell className="w-4 h-4" />
                 Notification
               </button>
-              <button className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50 flex items-center gap-1">
-                <FaBan className="w-4 h-4" />
-                Block
-              </button>
-              <button className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-1">
+              <button onClick={handleDeleteSelectedCompany} className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-1">
                 <FaTrash className="w-4 h-4" />
                 Delete
               </button>
@@ -322,80 +340,88 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
         )}
 
         {/* Table */}
-        <CompanyTable
-          companies={paginatedCompanies}
-          selectedCompanies={selectedCompanies}
-          expandedCompanies={expandedCompanies}
-          activeDropdown={activeDropdown}
-          onSelectCompany={handleSelectCompany}
-          onSelectAll={handleSelectAllClick}
-          onToggleExpand={toggleCompanyExpansion}
-          onOpenUserModal={handleOpenUserModal}
-          onDropdown={setActiveDropdown}
-          isSelected={isSelected}
-          getStatusBadge={getStatusBadge}
-          formatDate={formatDate}
-          cardClass={cardClass}
-          textClass={textClass}
-          mutedTextClass={mutedTextClass}
-          darkMode={darkMode}
-        />
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <ClipLoader color={darkMode ? "#fff" : "#2563eb"} size={48} />
+          </div>
+        ) : (
+          <>
+            <CompanyTable
+              companies={paginatedCompanies}
+              selectedCompanies={selectedCompanies}
+              expandedCompanies={expandedCompanies}
+              activeDropdown={activeDropdown}
+              onSelectCompany={handleSelectCompany}
+              onSelectAll={handleSelectAllClick}
+              onToggleExpand={toggleCompanyExpansion}
+              onOpenUserModal={handleOpenUserModal}
+              onDropdown={setActiveDropdown}
+              isSelected={isSelected}
+              getStatusBadge={getStatusBadge}
+              formatDate={formatDate}
+              cardClass={cardClass}
+              textClass={textClass}
+              mutedTextClass={mutedTextClass}
+              darkMode={darkMode}
+            />
 
-        {/* Pagination */}
-        <div
-          className={`px-6 py-3 flex items-center justify-between border-t border-gray-200 ${
-            darkMode ? "bg-gray-900" : "bg-white"
-          }`}
-        >
-          <div className={`flex items-center text-sm ${textClass}`}>
-            <span>
-              Showing {page * rowsPerPage + 1} to{" "}
-              {Math.min((page + 1) * rowsPerPage, filteredCompanies.length)} of{" "}
-              {filteredCompanies.length} entries
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <select
-              className={`px-3 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${textClass} ${cardClass}`}
-              value={rowsPerPage}
-              onChange={(e) => {
-                setRowsPerPage(parseInt(e.target.value));
-                setPage(0);
-              }}
+            {/* Pagination */}
+            <div
+              className={`px-6 py-3 flex items-center justify-between border-t border-gray-200 ${
+                darkMode ? "bg-gray-900" : "bg-white"
+              }`}
             >
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-            </select>
-            <div className="flex">
-              <button
-                className={`px-3 py-1 border border-gray-300 rounded-l-md text-sm hover:${
-                  darkMode ? "bg-gray-700" : "bg-gray-50"
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
-                disabled={page === 0}
-                onClick={() => setPage(page - 1)}
-              >
-                Previous
-              </button>
-              <span
-                className={`px-3 py-1 border-t border-b border-gray-300 ${
-                  darkMode ? "bg-gray-700" : "bg-gray-50"
-                } text-sm`}
-              >
-                {page + 1} of {totalPages}
-              </span>
-              <button
-                className={`px-3 py-1 border border-gray-300 rounded-r-md text-sm hover:${
-                  darkMode ? "bg-gray-700" : "bg-gray-50"
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
-                disabled={page >= totalPages - 1}
-                onClick={() => setPage(page + 1)}
-              >
-                Next
-              </button>
+              <div className={`flex items-center text-sm ${textClass}`}>
+                <span>
+                  Showing {page * rowsPerPage + 1} to{" "}
+                  {Math.min((page + 1) * rowsPerPage, filteredCompanies.length)}{" "}
+                  of {filteredCompanies.length} entries
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  className={`px-3 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${textClass} ${cardClass}`}
+                  value={rowsPerPage}
+                  onChange={(e) => {
+                    setRowsPerPage(parseInt(e.target.value));
+                    setPage(0);
+                  }}
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                </select>
+                <div className="flex">
+                  <button
+                    className={`px-3 py-1 border border-gray-300 rounded-l-md text-sm hover:${
+                      darkMode ? "bg-gray-700" : "bg-gray-50"
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    disabled={page === 0}
+                    onClick={() => setPage(page - 1)}
+                  >
+                    Previous
+                  </button>
+                  <span
+                    className={`px-3 py-1 border-t border-b border-gray-300 ${
+                      darkMode ? "bg-gray-700" : "bg-gray-50"
+                    } text-sm`}
+                  >
+                    {page + 1} of {totalPages}
+                  </span>
+                  <button
+                    className={`px-3 py-1 border border-gray-300 rounded-r-md text-sm hover:${
+                      darkMode ? "bg-gray-700" : "bg-gray-50"
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    disabled={page >= totalPages - 1}
+                    onClick={() => setPage(page + 1)}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
 
       {/* Company Modal */}
@@ -408,6 +434,7 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
         onChange={handleCompanyFormChange}
         textClass={textClass}
         cardClass={cardClass}
+        loading={loading}
       />
 
       {/* User Modal */}
@@ -422,6 +449,7 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
         companies={companies}
         textClass={textClass}
         cardClass={cardClass}
+        loading={loading}
       />
     </div>
   );

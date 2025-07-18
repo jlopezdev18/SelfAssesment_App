@@ -10,6 +10,8 @@ import ReleasePostModal from "./ReleasePostModal";
 import ReleasePostCarousel from "./ReleasePostCarousel";
 import type { DashboardMainProps, ReleasePost } from "./types/DashboardMainInterfaces";
 import AddReleasePostModal from "./AddReleasePostModal";
+import { useDashboardMain } from "./hooks/useDashboardMain";
+import { useIsAdmin } from "../../../../hooks/useIsAdmin";
 
 const DashboardMain: React.FC<DashboardMainProps> = ({
   darkMode,
@@ -19,89 +21,15 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
 }) => {
   const [selectedPost, setSelectedPost] = useState<ReleasePost | null>(null);
   const [openAddPostModal, setOpenAddPostModal] = useState(false);
-  // Release posts data
-  const releasePosts: ReleasePost[] = [
-    {
-      id: 1,
-      title: "Latest Update - Release December 2023",
-      description:
-        "Hello Users, We hope this message finds you well! We're thrilled to share some exciting news with you – a brand new version of our application is now available for download!",
-      fullContent: `Latest Update - Release December 2023
+  const { releasePosts, addReleasePost } = useDashboardMain(3); // Initialize with 3 posts per slide
 
-Hello Users,
-
-We hope this message finds you well! We're thrilled to share some exciting news with you – a brand new version of our application is now available for download!
-
-Our team has been working hard to enhance your user experience, address any bugs, and introduce exciting new features. To take advantage of these improvements, we encourage you to upgrade to the latest version.
-
-Here's how to get started:
-
-1. Visit the download page.
-2. Search for the latest version, Version 1.2.0.
-3. Under Download Links & More Click on "SelfAssessmentApp - Update - Ver 1.2.0" to download the latest version.
-4. Follow the "Install Update Guide"
-
-We sincerely appreciate your continued support, and we're confident that you'll love the enhancements we've made.
-
-If you have any questions or encounter any issues during the update process, please don't hesitate to reach out.
-
-Thank you for being a valued member of our community!
-
-Best regards,
-The Development Team`,
-      date: "2023-12-15",
-      version: "v1.2.0",
-      image:
-        "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop",
-      category: "Update Release",
-      author: "Development Team",
-      tags: ["Update", "Download", "Features", "Bug Fixes"],
-    },
-    {
-      id: 2,
-      title: "Latest Update - Release December 2025",
-      description:
-        "Hello Users, We hope this message finds you well! We're thrilled to share some exciting news with you – a brand new version of our application is now available for download!",
-      fullContent: `Latest Update - Release December 2023
-
-Hello Users,
-
-We hope this message finds you well! We're thrilled to share some exciting news with you – a brand new version of our application is now available for download!
-
-Our team has been working hard to enhance your user experience, address any bugs, and introduce exciting new features. To take advantage of these improvements, we encourage you to upgrade to the latest version.
-
-Here's how to get started:
-
-1. Visit the download page.
-2. Search for the latest version, Version 1.2.0.
-3. Under Download Links & More Click on "SelfAssessmentApp - Update - Ver 1.2.0" to download the latest version.
-4. Follow the "Install Update Guide"
-
-We sincerely appreciate your continued support, and we're confident that you'll love the enhancements we've made.
-
-If you have any questions or encounter any issues during the update process, please don't hesitate to reach out.
-
-Thank you for being a valued member of our community!
-
-Best regards,
-The Development Team`,
-      date: "2023-12-15",
-      version: "v1.2.0",
-      image:
-        "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop",
-      category: "Update Release",
-      author: "Development Team",
-      tags: ["Update", "Download", "Features", "Bug Fixes"],
-    },
-  ];
-
-  const formatDate = (dateString: string) =>
-    new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-
+  const formatDate = (dateObj: { _seconds: number; _nanoseconds: number }) =>
+  new Date(dateObj._seconds * 1000).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const isAdmin = useIsAdmin();
   const openPost = (post: ReleasePost) => {
     setSelectedPost(post);
     document.body.style.overflow = "hidden";
@@ -114,7 +42,7 @@ The Development Team`,
 
   const handleAddPost = (post: ReleasePost) => {
     // Here you would typically send the post to your backend
-    console.log("New post added:", post);
+    addReleasePost(post);
     // For now, just close the modal
     setOpenAddPostModal(false);
   };
@@ -147,6 +75,7 @@ The Development Team`,
             Dashboard
           </h1>
         </div>
+        {isAdmin && (
         <button
           className="text-white px-6 py-3 rounded-lg text-sm font-medium transition-all hover:shadow-lg transform hover:scale-105"
           style={{
@@ -158,6 +87,7 @@ The Development Team`,
           <MdOutlinePostAdd className="inline mr-2 w-5 h-5" />
           Add Release Post
         </button>
+        )}
       </div>
       {/* Add Release Post Modal */}
       <AddReleasePostModal

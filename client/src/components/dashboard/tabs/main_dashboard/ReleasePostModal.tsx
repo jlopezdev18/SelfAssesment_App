@@ -5,7 +5,7 @@ import type { ReleasePost } from "./types/DashboardMainInterfaces";
 interface ReleasePostModalProps {
   post: ReleasePost;
   onClose: () => void;
-  formatDate: (date: string) => string;
+  formatDate: (dateObj: { _seconds: number; _nanoseconds: number }) => string;
   renderFullContent: (content: string) => React.ReactNode;
 }
 
@@ -33,11 +33,17 @@ const ReleasePostModal: React.FC<ReleasePostModalProps> = ({
               <span className="bg-white/90 text-xs px-3 py-1 rounded-full text-blue-600 font-medium">
                 {post.version}
               </span>
-              <span className="bg-white/90 text-xs px-3 py-1 rounded-full text-green-600 font-medium">
-                {post.category}
-              </span>
             </div>
             <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{post.title}</h1>
+            {post.tags && post.tags.length > 0 && (
+              <div className="flex flex-wrap items-center space-x-2 mb-4">
+                {post.tags.map((tag) => (
+                  <span key={tag} className="bg-white/90 text-xs px-2 py-1 rounded-full text-blue-600 font-medium">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="flex items-center space-x-4 text-white text-sm">
               <span>{formatDate(post.date)}</span>
             </div>

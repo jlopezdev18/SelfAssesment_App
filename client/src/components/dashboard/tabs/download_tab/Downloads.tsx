@@ -16,26 +16,23 @@ const Downloads: React.FC<DownloadsProps> = ({
   onAddItem,
 }) => {
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "installers" | "documents" | "resources">("all");
+  const [filter, setFilter] = useState<"all" | "installers" | "documents" | "resources" | "updates">("all");
   const [showAddModal, setShowAddModal] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [newItem, setNewItem] = useState<DownloadItem>({
     name: "",
     type: "installers",
     size: "",
-    version: "",
-    description: "",
+    updated: "",
     downloadUrl: "",
   });
 
   const isAdmin = useIsAdmin();
   const { uploading, uploadError, setUploadError, addItem } = useAddDownloadItem(onAddItem);
-
   const filteredItems = downloadItems.filter((item) => {
     const matchesType = filter === "all" ? true : item.type === filter;
     const matchesSearch =
-      item.name.toLowerCase().includes(search.toLowerCase()) ||
-      item.description.toLowerCase().includes(search.toLowerCase());
+      item.name.toLowerCase().includes(search.toLowerCase());
     return matchesType && matchesSearch;
   });
 
@@ -45,8 +42,7 @@ const Downloads: React.FC<DownloadsProps> = ({
       name: "",
       type: "installers",
       size: "",
-      version: "",
-      description: "",
+      updated: "",
       downloadUrl: "",
     });
     setFile(null);
@@ -56,6 +52,7 @@ const Downloads: React.FC<DownloadsProps> = ({
   const handleAddItem = () => {
     addItem(newItem, file, handleModalClose);
   };
+
 
   return (
     <div className="p-8">
@@ -95,7 +92,7 @@ const Downloads: React.FC<DownloadsProps> = ({
           value={filter}
           onChange={(e) =>
             setFilter(
-              e.target.value as "all" | "installers" | "documents" | "resources"
+              e.target.value as "all" | "installers" | "documents" | "resources" | "updates"
             )
           }
           className={`py-2 px-4 rounded-lg border ${
@@ -108,6 +105,7 @@ const Downloads: React.FC<DownloadsProps> = ({
           <option value="installers">Installers</option>
           <option value="documents">Documents</option>
           <option value="resources">Resources</option>
+          <option value="updates">Updates</option>
         </select>
       </div>
 
@@ -118,6 +116,7 @@ const Downloads: React.FC<DownloadsProps> = ({
         mutedTextClass={mutedTextClass}
         darkMode={darkMode}
         getTypeIcon={getTypeIcon}
+        isAdmin={isAdmin}
       />
 
       <AddDownloadModal

@@ -1,5 +1,6 @@
 import React from "react";
 import { FaTimes, FaBuilding, FaUser } from "react-icons/fa";
+import ClipLoader from "react-spinners/ClipLoader";
 
 interface CompanyModalProps {
   open: boolean;
@@ -16,6 +17,7 @@ interface CompanyModalProps {
   onChange: (field: keyof CompanyModalProps["form"], value: string) => void;
   textClass: string;
   cardClass: string;
+  loading: boolean;
 }
 
 const CompanyModal: React.FC<CompanyModalProps> = ({
@@ -27,6 +29,7 @@ const CompanyModal: React.FC<CompanyModalProps> = ({
   onChange,
   textClass,
   cardClass,
+  loading,
 }) => {
   if (!open) return null;
 
@@ -161,8 +164,16 @@ const CompanyModal: React.FC<CompanyModalProps> = ({
             <button
               type="submit"
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+              disabled={loading}
             >
-              Create Company
+                {loading ? (
+                <>
+                  <span>Creating...</span>
+                  <ClipLoader color="#fff" size={16} />
+                </>
+              ) : (
+                "Create Company"
+              )}
             </button>
           </div>
         </form>

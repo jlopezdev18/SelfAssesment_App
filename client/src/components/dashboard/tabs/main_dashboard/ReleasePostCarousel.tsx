@@ -5,17 +5,17 @@ import type { ReleasePost } from "./types/DashboardMainInterfaces";
 import { useDashboardMain } from "./hooks/useDashboardMain";
 
 interface ReleasePostCarouselProps {
-  releasePosts: ReleasePost[];
+  releasePosts?: ReleasePost[];
   postsPerSlide?: number;
   cardClass: string;
   textClass: string;
   darkMode: boolean;
   onPostClick: (post: ReleasePost) => void;
-  formatDate: (date: string) => string;
+  formatDate: (dateObj: { _seconds: number; _nanoseconds: number }) => string;
 }
 
 const ReleasePostCarousel: React.FC<ReleasePostCarouselProps> = ({
-  releasePosts,
+  releasePosts = [],
   postsPerSlide = 3,
   cardClass,
   textClass,
@@ -29,7 +29,7 @@ const ReleasePostCarousel: React.FC<ReleasePostCarouselProps> = ({
     nextSlide,
     prevSlide,
     totalSlides,
-  } = useDashboardMain(releasePosts, postsPerSlide);
+  } = useDashboardMain(postsPerSlide);
 
   return (
     <div
@@ -61,7 +61,7 @@ const ReleasePostCarousel: React.FC<ReleasePostCarouselProps> = ({
           className="flex transition-transform duration-300 ease-in-out"
           style={{ transform: `translateX(-${currentSlide * 100}%)` }}
         >
-          {Array.from({ length: totalSlides }).map((_, slideIndex) => (
+          {Array.isArray(releasePosts) && Array.from({ length: totalSlides }).map((_, slideIndex) => (
             <div
               key={slideIndex}
               className="w-full flex-shrink-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
@@ -72,6 +72,7 @@ const ReleasePostCarousel: React.FC<ReleasePostCarouselProps> = ({
                   slideIndex * postsPerSlide + postsPerSlide
                 )
                 .map((post) => (
+                  console.log(post),
                   <ReleasePostCard
                     key={post.id}
                     post={post}

@@ -9,8 +9,8 @@ export interface User {
 }
 
 export interface Company {
-  companyEmail: any;
-  companyName: any;
+  companyEmail: string;
+  companyName: string;
   id: string;
   name: string;
   email: string;
@@ -19,6 +19,7 @@ export interface Company {
   owner: User;
   users: User[];
   createdDate: string;
+  deleted?: boolean; 
 }
 
 export interface CompanyDashboardProps {
