@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 
 export interface VersionFile {
@@ -24,34 +24,33 @@ export function useLatestVersion() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchLatestVersion = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get("http://localhost:4000/api/versions/latest");
-        setData(response.data as VersionData);
-        setError(null);
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("Error desconocido");
-        }
-      } finally {
-        setLoading(false);
+  const fetchLatestVersion = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get("http://localhost:4000/api/versions/latest");
+      setData(response.data as VersionData);
+      setError(null);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Error desconocido");
       }
-    };
-
-    fetchLatestVersion();
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchLatestVersion();
+  }, [fetchLatestVersion]);
 
   const addVersion = async (versionData: VersionData) => {
     setLoading(true);
     try {
       const response = await axios.post("http://localhost:4000/api/versions", versionData);
       
-      const latest = await axios.get("http://localhost:4000/api/versions/latest");
-      setData(latest.data as VersionData);
+      await fetchLatestVersion(); 
       setError(null);
       return response.data;
     } catch (err: unknown) {
@@ -72,8 +71,7 @@ export function useLatestVersion() {
     try {
       await axios.put(`http://localhost:4000/api/versions/${id}`, versionData);
      
-      const latest = await axios.get("http://localhost:4000/api/versions/latest");
-      setData(latest.data as VersionData);
+      await fetchLatestVersion();
       setError(null);
     } catch (err: unknown) {
       if (err instanceof Error) {

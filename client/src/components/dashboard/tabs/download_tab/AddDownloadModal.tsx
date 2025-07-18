@@ -1,5 +1,5 @@
 import React from "react";
-import { FaTimes, FaSpinner } from "react-icons/fa";
+import { FaTimes, FaSpinner, FaFile, FaTimesCircle, FaFileUpload } from "react-icons/fa";
 import type { DownloadItem } from "./types/DownloadInterfaces";
 
 interface AddDownloadModalProps {
@@ -82,20 +82,87 @@ const AddDownloadModal: React.FC<AddDownloadModalProps> = ({
             </div>
             {/* File */}
             <div>
-              <label className={`block text-sm font-medium ${textClass} mb-2`}>
+              <label className={`block text-sm font-medium ${textClass} mb-1`}>
                 Upload File *
               </label>
-              <input
-                type="file"
-                accept="*"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className="w-full"
-                disabled={uploading}
-              />
-              {file && (
-                <div className="mt-1 text-xs text-green-600">
-                  Selected: {file.name}
-                </div>
+              <div
+                className={`mt-1 flex justify-center px-6 pt-3 pb-3 border-2 border-dashed rounded-lg relative ${
+                  darkMode ? "border-gray-600" : "border-gray-300"
+                }`}
+              >
+                {file ? (
+                  <div className="relative w-full">
+                    <div
+                      className={`p-4 rounded ${
+                        darkMode ? "bg-gray-800" : "bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <FaFile
+                          className={`w-8 h-8 ${
+                            darkMode ? "text-gray-400" : "text-gray-500"
+                          }`}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className={`text-sm font-medium truncate ${textClass}`}
+                          >
+                            {file.name}
+                          </p>
+                          <p
+                            className={`text-xs ${
+                              darkMode ? "text-gray-400" : "text-gray-500"
+                            }`}
+                          >
+                            {(file.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setFile(null)}
+                          className={`p-1 rounded-full hover:bg-gray-200 ${
+                            darkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"
+                          }`}
+                        >
+                          <FaTimesCircle className="w-5 h-5 text-red-500" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2 text-center py-3">
+                    <FaFileUpload
+                      className={`mx-auto h-8 w-8 ${
+                        darkMode ? "text-gray-400" : "text-gray-400"
+                      }`}
+                    />
+                    <div className={`flex text-sm ${textClass}`}>
+                      <label
+                        className={`relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none`}
+                      >
+                        <span>Upload a file</span>
+                        <input
+                          type="file"
+                          className="sr-only"
+                          accept="*"
+                          onChange={(e) => setFile(e.target.files?.[0] || null)}
+                          disabled={uploading}
+                        />
+                      </label>
+                      <p className={`pl-1 ${textClass}`}>or drag and drop</p>
+                    </div>
+                    <p
+                      className={`text-xs ${
+                        darkMode ? "text-gray-400" : "text-gray-500"
+                      }`}
+                    >
+                      EXE, PDF, DOC, DOCX up to 100MB
+                    </p>
+                  </div>
+                )}
+              </div>
+              {uploadError && (
+                <div className="mt-2 text-sm text-red-600">{uploadError}</div>
               )}
             </div>
             {uploadError && (
@@ -121,9 +188,7 @@ const AddDownloadModal: React.FC<AddDownloadModalProps> = ({
             </button>
             <button
               onClick={onAdd}
-              disabled={
-                uploading 
-              }
+              disabled={uploading}
               className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg font-medium transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {uploading ? (

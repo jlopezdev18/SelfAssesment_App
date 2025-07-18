@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import Sidebar from "../sidebar/Sidebar";
 import { DashboardMain, Downloads, Settings, ClientsDashboard, Versioning } from "./tabs";
 import { FaDownload, FaFileAlt, FaCog } from "react-icons/fa";
-import { useDownload } from "../../hooks/useDownloads";
 import { useIsAdmin } from "../../hooks/useIsAdmin";
 
 const Dashboard: React.FC = () => {
@@ -10,8 +9,7 @@ const Dashboard: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  const { downloads: downloadItems, loading } = useDownload();
-
+ 
 
   const isAdmin = useIsAdmin();
 
@@ -62,18 +60,13 @@ const Dashboard: React.FC = () => {
             />
           )}
           {activeTab === "downloads" && (
-            loading ? (
-              <div className="p-6 text-center text-gray-500">Loading resources...</div>
-            ) : (
-              <Downloads
-                downloadItems={downloadItems}
-                cardClass={cardClass}
-                textClass={textClass}
-                mutedTextClass={mutedTextClass}
-                darkMode={darkMode}
-                getTypeIcon={getTypeIcon}
-              />
-            )
+            <Downloads
+              cardClass={cardClass}
+              textClass={textClass}
+              mutedTextClass={mutedTextClass}
+              darkMode={darkMode}
+              getTypeIcon={getTypeIcon}
+            />
           )}
           {activeTab === "versioning" && (
             <Versioning

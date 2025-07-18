@@ -1,25 +1,24 @@
 import React, { useState } from "react";
 import { FaSearch, FaPlus } from "react-icons/fa";
 import { useIsAdmin } from "../../../../hooks/useIsAdmin";
-import { useAddDownloadItem } from "./hooks/useAddDownloadItem";
+import { useDownloadManager } from "./hooks/useDownloadManager";
 import AddDownloadModal from "./AddDownloadModal";
 import DownloadsList from "./DownloadsList";
 import type { DownloadItem, DownloadsProps } from "./types/DownloadInterfaces";
 
 const Downloads: React.FC<DownloadsProps> = ({
-  downloadItems,
   cardClass,
   textClass,
   mutedTextClass,
   darkMode,
   getTypeIcon,
-  onAddItem,
 }) => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "installers" | "documents" | "resources" | "updates">("all");
   const [showAddModal, setShowAddModal] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [newItem, setNewItem] = useState<DownloadItem>({
+    id: "",
     name: "",
     type: "installers",
     size: "",
@@ -28,8 +27,8 @@ const Downloads: React.FC<DownloadsProps> = ({
   });
 
   const isAdmin = useIsAdmin();
-  const { uploading, uploadError, setUploadError, addItem } = useAddDownloadItem(onAddItem);
-  const filteredItems = downloadItems.filter((item) => {
+  const { downloads, uploading, uploadError, setUploadError, addItem, deleteItem, loading } = useDownloadManager();
+  const filteredItems = downloads.filter((item) => {
     const matchesType = filter === "all" ? true : item.type === filter;
     const matchesSearch =
       item.name.toLowerCase().includes(search.toLowerCase());
@@ -39,6 +38,7 @@ const Downloads: React.FC<DownloadsProps> = ({
   const handleModalClose = () => {
     setShowAddModal(false);
     setNewItem({
+      id: "",
       name: "",
       type: "installers",
       size: "",
@@ -117,6 +117,8 @@ const Downloads: React.FC<DownloadsProps> = ({
         darkMode={darkMode}
         getTypeIcon={getTypeIcon}
         isAdmin={isAdmin}
+        onDelete={deleteItem}
+        loading={loading}
       />
 
       <AddDownloadModal

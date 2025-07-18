@@ -21,7 +21,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
 }) => {
   const [selectedPost, setSelectedPost] = useState<ReleasePost | null>(null);
   const [openAddPostModal, setOpenAddPostModal] = useState(false);
-  const { releasePosts, addReleasePost } = useDashboardMain(3); // Initialize with 3 posts per slide
+  const { releasePosts, addReleasePost, deleteReleasePost, loading } = useDashboardMain(3);
 
   const formatDate = (dateObj: { _seconds: number; _nanoseconds: number }) =>
   new Date(dateObj._seconds * 1000).toLocaleDateString("en-US", {
@@ -45,6 +45,10 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
     addReleasePost(post);
     // For now, just close the modal
     setOpenAddPostModal(false);
+  };
+
+  const handleDeletePost = (postId: string) => {
+    deleteReleasePost(postId);
   };
 
   const renderFullContent = (content: string) => {
@@ -171,6 +175,9 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
         darkMode={darkMode}
         onPostClick={openPost}
         formatDate={formatDate}
+        handleDeletePost={handleDeletePost}
+        loading={loading}
+        isAdmin={isAdmin}
       />
 
       {/* Modal */}

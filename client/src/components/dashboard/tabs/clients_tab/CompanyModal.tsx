@@ -18,6 +18,7 @@ interface CompanyModalProps {
   textClass: string;
   cardClass: string;
   loading: boolean;
+  isEditing?: boolean;
 }
 
 const CompanyModal: React.FC<CompanyModalProps> = ({
@@ -30,6 +31,7 @@ const CompanyModal: React.FC<CompanyModalProps> = ({
   textClass,
   cardClass,
   loading,
+  isEditing
 }) => {
   if (!open) return null;
 
@@ -41,7 +43,7 @@ const CompanyModal: React.FC<CompanyModalProps> = ({
           onSubmit();
         }}>
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <h3 className={`text-lg font-semibold ${textClass}`}>Add New Company</h3>
+            <h3 className={`text-lg font-semibold ${textClass}`}>{isEditing ? "Edit Company" : "Add New Company"}</h3>
             <button
               type="button"
               onClick={onClose}
@@ -168,11 +170,11 @@ const CompanyModal: React.FC<CompanyModalProps> = ({
             >
                 {loading ? (
                 <>
-                  <span>Creating...</span>
+                  <span>{isEditing ? "Updating..." : "Creating..."}</span>
                   <ClipLoader color="#fff" size={16} />
                 </>
               ) : (
-                "Create Company"
+                isEditing ? "Update Company" : "Create Company"
               )}
             </button>
           </div>

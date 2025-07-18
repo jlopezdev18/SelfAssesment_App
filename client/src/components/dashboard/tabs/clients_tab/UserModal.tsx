@@ -15,6 +15,7 @@ interface UserModalProps {
   textClass: string;
   cardClass: string;
   loading: boolean;
+  isEditing?: boolean; 
 }
 
 const UserModal: React.FC<UserModalProps> = ({
@@ -28,14 +29,15 @@ const UserModal: React.FC<UserModalProps> = ({
   companies,
   textClass,
   cardClass,
-  loading
+  loading,
+  isEditing
 }) => {
   if (!open) return null;
   return (
     <div className="fixed inset-0 backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50">
       <div className={`${cardClass} rounded-lg shadow-xl w-full max-w-md mx-4`}>
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 className={`text-lg font-semibold ${textClass}`}>Add User to Company</h3>
+          <h3 className={`text-lg font-semibold ${textClass}`}>{isEditing ? "Edit User" : "Add User to Company"}</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <FaTimes className="w-6 h-6" />
           </button>
@@ -116,7 +118,7 @@ const UserModal: React.FC<UserModalProps> = ({
                   <PulseLoader color="#fff" size={8} />
                 </>
               ) : (
-                "Add User"
+                isEditing ? "Edit User" : "Add User"
               )}
           </button>
         </div>

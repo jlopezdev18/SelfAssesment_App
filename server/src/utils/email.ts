@@ -53,21 +53,32 @@ export async function sendReleaseEmailToAllUsers(
   version: string,
   tags: string[]
 ) {
+  const formattedContent = fullContent
+    .split("\n\n")
+    .map(
+      (paragraph) =>
+        `<p style="font-size: 16px; color: #555; margin: 16px 0;">${paragraph.trim()}</p>`
+    )
+    .join("");
+
   const msg = {
     to: email,
     from: process.env.MAIL_USER!,
     subject: `New Release: ${title}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border:1px solid #ddd; border-radius:8px; padding: 20px; background: #f9f9f9;">
-        <h2 style="color: #333;">New Release: ${title}</h2>
-        <h3 style="color: #333;">Full Content</h3>
-        <p style="font-size: 16px; color: #555;">${fullContent}</p>
-        <p style="font-size: 16px; color: #555;">
-          <strong>Version:</strong> ${version}
-        </p>
-        <p style="font-size: 16px; color: #555;">
-          <strong>Tags:</strong> ${tags.join(", ")}
-        </p>
+        <h2 style="color: #333; margin-bottom: 24px;">${title}</h2>
+        <div style="line-height: 1.6;">
+          ${formattedContent}
+        </div>
+        <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #ddd;">
+          <p style="font-size: 16px; color: #555; margin: 8px 0;">
+            <strong>Version:</strong> ${version}
+          </p>
+          <p style="font-size: 16px; color: #555; margin: 8px 0;">
+            <strong>Tags:</strong> ${tags.join(", ")}
+          </p>
+        </div>
       </div>
     `,
   };

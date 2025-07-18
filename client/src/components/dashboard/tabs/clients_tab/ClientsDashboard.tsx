@@ -6,9 +6,11 @@ import UserModal from "./UserModal";
 import { useCompanies } from "./hooks/useCompanies";
 import { z } from "zod";
 import type {
+  Company,
   CompanyDashboardProps,
   NewCompanyForm,
   NewUserForm,
+  User,
 } from "./types/ClientsInterfaces";
 import ClipLoader from "react-spinners/ClipLoader";
 
@@ -34,6 +36,8 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
   darkMode,
 }) => {
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
+  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [expandedCompanies, setExpandedCompanies] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -64,8 +68,16 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
     {}
   );
 
-  // Use custom hook for company logic
-  const { companies, addCompany, addUserToCompany, deleteCompany, loading } = useCompanies([]);
+  const {
+    companies,
+    addCompany,
+    addUserToCompany,
+    updateCompany,
+    deleteCompany,
+    editUser,
+    deleteUser,
+    loading,
+  } = useCompanies([]);
 
   const filteredCompanies = companies.filter((company) => {
     const matchesSearch =
@@ -82,7 +94,6 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
           user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           user.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-          
       );
     const matchesFilter =
       filterStatus === "all" || company.status === filterStatus;
@@ -128,11 +139,11 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
   };
 
   const formatDate = (dateObj: { _seconds: number; _nanoseconds: number }) =>
-  new Date(dateObj._seconds * 1000).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+    new Date(dateObj._seconds * 1000).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
 
   const isSelected = (id: string) => selectedCompanies.indexOf(id) !== -1;
 
@@ -143,6 +154,7 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
 
   const handleCloseCompanyModal = () => {
     setOpenCompanyModal(false);
+    setEditingCompany(null);
     setNewCompanyForm({
       companyName: "",
       companyEmail: "",
@@ -233,24 +245,83 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
 
   const handleCompanySubmit = async () => {
     if (!validateCompanyForm()) return;
-    addCompany(newCompanyForm, handleCloseCompanyModal, () => {});
+    if (editingCompany) {
+      if (updateCompany) {
+        updateCompany(
+          editingCompany.id,
+          newCompanyForm,
+          handleCloseCompanyModal,
+          () => {}
+        );
+      }
+    } else {
+      addCompany(newCompanyForm, handleCloseCompanyModal, () => {});
+    }
+  };
+
+  const handleEditCompany = (company: Company) => {
+    setEditingCompany(company);
+    setNewCompanyForm({
+      companyName: company.companyName,
+      companyEmail: company.companyEmail,
+      firstName: company.owner.firstName,
+      lastName: company.owner.lastName,
+      email: company.owner.email,
+    });
+    setOpenCompanyModal(true);
+  };
+
+  const handleNotifyCompany = (companyId: string) => {
+    // Placeholder notification function
+    console.log(`Notification sent to company ${companyId}`);
+    // You can add your notification logic here
   };
 
   const handleUserSubmit = async () => {
     if (!validateUserForm() || !selectedCompanyForUser) return;
-    addUserToCompany(
-      selectedCompanyForUser,
-      newUserForm,
-      handleCloseUserModal,
-      () => {}
-    );
+    if (editingUser && selectedCompanyForUser) {
+      await editUser(
+        editingUser.id,
+        selectedCompanyForUser,
+        newUserForm,
+        handleCloseUserModal,
+        () => {}
+      );
+    } else {
+      addUserToCompany(
+        selectedCompanyForUser,
+        newUserForm,
+        handleCloseUserModal,
+        () => {}
+      );
+    }
+  };
+
+  const handleEditUser = (user: User, companyId: string) => {
+    setEditingUser(user);
+    setNewUserForm({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    });
+    setSelectedCompanyForUser(companyId);
+    setOpenUserModal(true);
   };
 
   const handleDeleteSelectedCompany = () => {
+    if (selectedCompanies.length === 0) return;
     selectedCompanies.forEach((companyId) => {
       deleteCompany(companyId, () => {});
     });
     setSelectedCompanies([]);
+  };
+
+  const handleDeleteCompany = (companyId: string) => {
+    deleteCompany(companyId, () => {});
+  };
+
+  const handleDeleteUser = async (userId: string, companyId: string) => {
+    deleteUser(userId, companyId);
   };
 
   const paginatedCompanies = filteredCompanies.slice(
@@ -330,7 +401,10 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
                 <FaBell className="w-4 h-4" />
                 Notification
               </button>
-              <button onClick={handleDeleteSelectedCompany} className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-1">
+              <button
+                onClick={handleDeleteSelectedCompany}
+                className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-1"
+              >
                 <FaTrash className="w-4 h-4" />
                 Delete
               </button>
@@ -355,6 +429,11 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
               onToggleExpand={toggleCompanyExpansion}
               onOpenUserModal={handleOpenUserModal}
               onDropdown={setActiveDropdown}
+              onEditCompany={handleEditCompany}
+              onNotifyCompany={handleNotifyCompany}
+              onDeleteCompany={handleDeleteCompany}
+              onEditUser={handleEditUser}
+              onDeleteUser={handleDeleteUser}
               isSelected={isSelected}
               getStatusBadge={getStatusBadge}
               formatDate={formatDate}
@@ -434,6 +513,7 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
         textClass={textClass}
         cardClass={cardClass}
         loading={loading}
+        isEditing={!!editingCompany}
       />
 
       {/* User Modal */}
@@ -449,6 +529,7 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
         textClass={textClass}
         cardClass={cardClass}
         loading={loading}
+        isEditing={!!editingUser}
       />
     </div>
   );

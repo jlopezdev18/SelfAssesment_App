@@ -1,12 +1,11 @@
 export interface ReleasePost {
-  id: number;
+  id: string;
   title: string;
   fullContent: string;
   date: { _seconds: number; _nanoseconds: number };
-  image: string;
   version: string;
   tags: string[];
-}
+  image: string;}
 
 export interface DashboardMainProps {
   darkMode: boolean;

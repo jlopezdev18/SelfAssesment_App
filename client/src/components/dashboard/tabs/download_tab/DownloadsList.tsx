@@ -1,13 +1,15 @@
 import React from "react";
-import { FaExternalLinkAlt, FaTrash } from "react-icons/fa";
-import type { DownloadItem, DownloadsListProps } from "./types/DownloadInterfaces";
-import { storage, db } from "../../../../firebase/config";
-import { deleteObject, ref } from "firebase/storage";
-import { doc, updateDoc } from "firebase/firestore";
-import Swal from "sweetalert2";
+import { FaDownload, FaExternalLinkAlt, FaTrash } from "react-icons/fa";
+import type {
+  DownloadItem,
+  DownloadsListProps,
+} from "./types/DownloadInterfaces";
+import ClipLoader from "react-spinners/ClipLoader";
 
 interface ExtendedDownloadsListProps extends DownloadsListProps {
   isAdmin: boolean;
+  onDelete: (item: DownloadItem) => Promise<void>;
+  loading?: boolean;
 }
 
 const DownloadsList: React.FC<ExtendedDownloadsListProps> = ({
@@ -18,49 +20,49 @@ const DownloadsList: React.FC<ExtendedDownloadsListProps> = ({
   darkMode,
   getTypeIcon,
   isAdmin,
+  onDelete,
+  loading,
 }) => {
   const handleDelete = async (item: DownloadItem) => {
     if (!isAdmin) return; // Extra safety check
-
-    try {
-      const result = await Swal.fire({
-        title: "Are you sure?",
-        text: "This action cannot be undone",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#d33",
-        cancelButtonColor: "#3085d6",
-        confirmButtonText: "Yes, delete it!",
-      });
-
-      if (result.isConfirmed) {
-        // Delete from Storage
-        const storageRef = ref(storage, item.path);
-        await deleteObject(storageRef);
-
-        // Logical delete in Firestore
-        if (!item.id) {
-          throw new Error("Item ID is undefined.");
-        }
-        await updateDoc(doc(db, "downloads", item.id), {
-          deleted: true,
-          deletedAt: new Date().toISOString(),
-          status: "inactive"
-        });
-
-        Swal.fire("Deleted!", "The file has been deleted.", "success");
-      }
-    } catch (error) {
-      console.error("Error deleting file:", error);
-      Swal.fire("Error!", "Failed to delete the file.", "error");
-    }
+    await onDelete(item);
   };
+   console.log("DownloadsList items:", items);
+   const formatNumber = (date: string) => {
+    const options: Intl.DateTimeFormatOptions = {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    };
+
+    return new Date(date).toLocaleString("en-US", options);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <ClipLoader color={darkMode ? "#fff" : "#000"} size={40} />
+        <p className={`mt-4 ${textClass}`}>Loading downloads...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {items.length === 0 ? (
-        <div className={`col-span-full text-center ${mutedTextClass}`}>
-          No items found.
+        <div className="col-span-full flex flex-col items-center justify-center py-12">
+          <div className={`w-16 h-16 mb-4 ${darkMode ? "text-gray-600" : "text-gray-400"}`}>
+            <FaDownload className="w-full h-full" />
+          </div>
+          <p className={`text-lg font-medium ${textClass}`}>
+            No downloads available
+          </p>
+          <p className={`mt-2 ${mutedTextClass}`}>
+            {isAdmin 
+              ? "Start by adding some files for users to download"
+              : "Check back later for available downloads"
+            }
+          </p>
         </div>
       ) : (
         items.map((item, index) => (
@@ -93,7 +95,7 @@ const DownloadsList: React.FC<ExtendedDownloadsListProps> = ({
                           : "bg-gray-100 text-gray-600"
                       } px-2 py-1 rounded-full`}
                     >
-                      {item.updated}
+                      {formatNumber(item.updated)}
                     </span>
                   )}
                 </div>

@@ -57,7 +57,6 @@ const ProtectedDashboard: React.FC = () => {
   if (showResetForm) {
     return <ResetPasswordForm onBack={() => setShowResetForm(false)} />;
   }
-  console.log(allowed);
   return allowed ? (
     <Dashboard />
   ) : (

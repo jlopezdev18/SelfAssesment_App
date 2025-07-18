@@ -20,8 +20,8 @@ export function useDashboardMain(postsPerSlide: number) {
       const res = await axios.get("http://localhost:4000/api/release-posts");
       setReleasePosts(res.data as ReleasePost[]);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || "Error fetching posts");
+    } catch {
+      setError("Error fetching posts");
     } finally {
       setLoading(false);
     }
@@ -32,13 +32,24 @@ export function useDashboardMain(postsPerSlide: number) {
     setLoading(true);
     try {
       const res = await axios.post("http://localhost:4000/api/release-posts/addPost", postData);
-      // Opcional: recargar la lista después de agregar
       await fetchPosts();
       setError(null);
       return res.data;
-    } catch (err: any) {
-      setError(err.message || "Error adding post");
-      throw err;
+    } catch {
+      setError("Error adding post");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteReleasePost = async (postId: string) => {
+    setLoading(true);
+    try {
+      await axios.delete(`http://localhost:4000/api/release-posts/${postId}`);
+      setReleasePosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
+      setError(null);
+    } catch {
+      setError("Error deleting post");
     } finally {
       setLoading(false);
     }
@@ -71,7 +82,8 @@ export function useDashboardMain(postsPerSlide: number) {
     nextSlide,
     prevSlide,
     totalSlides,
-    addReleasePost, // <-- aquí está la función para agregar
-    fetchPosts,     // <-- puedes exponerla si quieres refrescar manualmente
+    addReleasePost,
+    deleteReleasePost,
+    fetchPosts,
   };
 }

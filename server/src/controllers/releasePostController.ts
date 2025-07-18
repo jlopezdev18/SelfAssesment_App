@@ -28,7 +28,7 @@ export const addReleasePost = async (
   res: Response
 ): Promise<any> => {
   try {
-    const { title, fullContent, version, tags } = req.body;
+    const { title, fullContent, version, tags, image } = req.body;
     if (!title || !fullContent) {
       return res
         .status(400)
@@ -40,6 +40,7 @@ export const addReleasePost = async (
       fullContent,
       version,
       tags,
+      image,
       date: admin.firestore.Timestamp.now(), // Use current timestamp as release date
       createdAt: admin.firestore.Timestamp.now(),
     });
@@ -64,5 +65,23 @@ export const addReleasePost = async (
   } catch (error) {
     console.error("Error adding release post:", error);
     res.status(500).json({ error: "Failed to add release post." });
+  }
+};
+
+export const deleteReleasePost = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  const { postId } = req.params;
+  if (!postId) {
+    return res.status(400).json({ error: "Post ID is required." });
+  }
+
+  try {
+    await admin.firestore().collection("releasePosts").doc(postId).delete();
+    res.status(200).json({ message: "Release post deleted successfully." });
+  } catch (error) {
+    console.error("Error deleting release post:", error);
+    res.status(500).json({ error: "Failed to delete release post." });
   }
 };

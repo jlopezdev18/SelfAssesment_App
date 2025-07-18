@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import type { ReleasePost } from "./types/DashboardMainInterfaces";
+import { FaImage, FaTimesCircle } from "react-icons/fa";
 
 interface AddReleasePostModalProps {
   open: boolean;
@@ -41,7 +42,28 @@ Best regards,
 The Development Team`,
     version: "v1.2.0",
     tags: "Update, Download, Features, Bug Fixes",
+    image: "",
   });
+
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setImagePreview(base64String);
+        setForm((prev) => ({ ...prev, image: base64String }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImagePreview(null);
+    setForm((prev) => ({ ...prev, image: "" }));
+  };
 
   const handleChange = (field: keyof typeof form, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -53,12 +75,12 @@ The Development Team`,
     onSubmit({
       ...form,
       tags: tagsArray,
-      id: 0,
+      id: "",
       date: {
         _seconds: Math.floor(Date.now() / 1000),
         _nanoseconds: 0,
       },
-      image: "",
+      image: form.image || "",
     });
     onClose();
   };
@@ -127,6 +149,48 @@ The Development Team`,
                 onChange={(e) => handleChange("tags", e.target.value)}
                 className="w-full px-3 py-2 border rounded-lg"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Cover Image
+              </label>
+              <div className="mt-1 flex justify-center px-6 pt-3 pb-3 border-2 border-gray-300 border-dashed rounded-lg relative">
+                {imagePreview ? (
+                  <div className="relative w-full max-h-32">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="h-32 mx-auto object-cover rounded"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute top-1 right-1 text-red-500 hover:text-red-700"
+                    >
+                      <FaTimesCircle className="w-5 h-5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-1 text-center py-2">
+                    <FaImage className="mx-auto h-8 w-8 text-gray-400" />
+                    <div className="flex text-sm text-gray-600">
+                      <label className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                        <span>Upload a file</span>
+                        <input
+                          type="file"
+                          className="sr-only"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                        />
+                      </label>
+                      <p className="pl-1">or drag and drop</p>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      PNG, JPG, GIF up to 10MB
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex justify-end gap-3 p-6 border-t border-gray-200">

@@ -8,13 +8,12 @@ import {
   FaPlus,
   FaDownload,
   FaEdit,
+  FaFileAlt,
 } from "react-icons/fa";
 import VersionForm from "./VersionForm";
 import type { VersioningProps } from "./types/VersioningInterfaces";
 import { useLatestVersion } from "./hooks/useLatestVersion";
 import Swal from "sweetalert2";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "../../../../firebase/config";
 
 interface FileProps {
   id: string;
@@ -25,14 +24,6 @@ interface FileProps {
   hashes: { algorithm: string; hash: string }[];
 }
 
-function formatBytes(bytes: number) {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-}
-
 const EnhancedVersioning: React.FC<VersioningProps> = ({
   darkMode,
   cardClass,
@@ -40,7 +31,12 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
   mutedTextClass,
   isAdmin,
 }) => {
-  const { data: versionData, loading, error, addVersion, updateVersion } = useLatestVersion();
+  const {
+    data: versionData,
+    loading,
+    addVersion,
+    updateVersion,
+  } = useLatestVersion();
   const [copiedHash, setCopiedHash] = useState("");
   const [expandedFile, setExpandedFile] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -68,7 +64,7 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
     files: {
       installer: {
         filename: "",
-        type: "installer",
+        type: "installer" as const,
         size: "",
         downloadUrl: "",
         hashes: [
@@ -79,7 +75,7 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
       },
       update: {
         filename: "",
-        type: "update",
+        type: "update" as const,
         size: "",
         downloadUrl: "",
         hashes: [
@@ -100,26 +96,26 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
         releaseType: versionData.releaseType,
         description: versionData.description,
         files: {
-          installer: versionData.files.find(f => f.type === "installer") || {
-            filename: "",
+          installer:  {
+            filename: versionData.files.find((f) => f.type === "installer")?.filename || "",
             type: "installer",
-            size: "",
-            downloadUrl: "",
+            size: versionData.files.find((f) => f.type === "installer")?.size || "",
+            downloadUrl: versionData.files.find((f) => f.type === "installer")?.downloadUrl || "",
             hashes: [
-              { algorithm: "SHA512", hash: "" },
-              { algorithm: "SHA384", hash: "" },
-              { algorithm: "SHA256", hash: "" },
+              { algorithm: "SHA512", hash: versionData.files.find((f) => f.type === "installer")?.hashes[0]?.hash || "" },
+              { algorithm: "SHA384", hash: versionData.files.find((f) => f.type === "installer")?.hashes[1]?.hash || "" },
+              { algorithm: "SHA256", hash: versionData.files.find((f) => f.type === "installer")?.hashes[2]?.hash || "" },
             ],
           },
-          update: versionData.files.find(f => f.type === "update") || {
-            filename: "",
+          update: {
+            filename: versionData.files.find((f) => f.type === "update")?.filename || "",
             type: "update",
-            size: "",
-            downloadUrl: "",
+            size: versionData.files.find((f) => f.type === "update")?.size || "",
+            downloadUrl: versionData.files.find((f) => f.type === "update")?.downloadUrl || "",
             hashes: [
-              { algorithm: "SHA512", hash: "" },
-              { algorithm: "SHA384", hash: "" },
-              { algorithm: "SHA256", hash: "" },
+              { algorithm: "SHA512", hash: versionData.files.find((f) => f.type === "update")?.hashes[0]?.hash || "" },
+              { algorithm: "SHA384", hash: versionData.files.find((f) => f.type === "update")?.hashes[1]?.hash || "" },
+              { algorithm: "SHA256", hash: versionData.files.find((f) => f.type === "update")?.hashes[2]?.hash || "" },
             ],
           },
         },
@@ -145,32 +141,9 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
     }
   };
 
-  // --- FILE UPLOAD FOR FORM ---
-  const handleFormFileUpload = async (
-    fileType: "installer" | "update",
-    file: File
-  ) => {
-    const folder = fileType === "installer" ? "installers" : "updates";
-    const storageRef = ref(storage, `downloads/${folder}/${file.name}`);
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
-
-    setFormData(prev => ({
-      ...prev,
-      files: {
-        ...prev.files,
-        [fileType]: {
-          ...prev.files[fileType],
-          filename: file.name,
-          size: formatBytes(file.size),
-          downloadUrl: url,
-        },
-      },
-    }));
-  };
-
+ 
   // --- ADD VERSION ---
-  const handleSubmit = () => {
+  const handleSubmit = async (): Promise<void> => {
     if (!formData.version || !formData.releaseType || !formData.description) {
       Swal.fire("Please fill in all version information fields", "", "warning");
       return;
@@ -206,7 +179,7 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
       files: filesToAdd,
     };
 
-    addVersion(dataToSubmit);
+    await addVersion(dataToSubmit);
 
     setShowAddForm(false);
 
@@ -243,18 +216,22 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
   };
 
   // --- EDIT VERSION ---
-  const handleEditVersionSubmit = () => {
+  const handleEditVersionSubmit = async (): Promise<void> => {
     const filesToUpdate = [];
     if (formData.files.installer.filename && formData.files.installer.size) {
       filesToUpdate.push({
         ...formData.files.installer,
-        id: files.find(f => f.type === "installer")?.id || Date.now().toString(),
+        id:
+          files.find((f) => f.type === "installer")?.id ||
+          Date.now().toString(),
       });
     }
     if (formData.files.update.filename && formData.files.update.size) {
       filesToUpdate.push({
         ...formData.files.update,
-        id: files.find(f => f.type === "update")?.id || (Date.now() + 1).toString(),
+        id:
+          files.find((f) => f.type === "update")?.id ||
+          (Date.now() + 1).toString(),
       });
     }
 
@@ -265,31 +242,11 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
       description: formData.description,
       files: filesToUpdate,
     };
-    console.log(versionData);
-    updateVersion(versionData?.id, dataToSubmit);
+    await updateVersion(versionData?.id, dataToSubmit);
     setShowEditForm(false);
     Swal.fire("Version updated!", "", "success");
   };
 
-  // --- FORM HASH HANDLER ---
-  const handleFormHashChange = (
-    fileType: "installer" | "update",
-    algorithm: string,
-    value: string
-  ) => {
-    setFormData(prev => ({
-      ...prev,
-      files: {
-        ...prev.files,
-        [fileType]: {
-          ...prev.files[fileType],
-          hashes: prev.files[fileType].hashes.map(h =>
-            h.algorithm === algorithm ? { ...h, hash: value } : h
-          ),
-        },
-      },
-    }));
-  };
 
   // --- FILE CARD ---
   const FileCard = ({ file }: { file: FileProps }) => {
@@ -407,8 +364,6 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
       </div>
     );
   }
-  if (error) return <div className="text-red-500">{error}</div>;
-  if (!versionData) return <div>No version data available.</div>;
 
   return (
     <div className="p-8">
@@ -501,8 +456,6 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
             setFormData={setFormData}
             onCancel={() => setShowAddForm(false)}
             onSubmit={handleSubmit}
-            handleFileUpload={handleFormFileUpload}
-            handleHashChange={handleFormHashChange}
             isEdit={false}
           />
         </div>
@@ -526,8 +479,6 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
             setFormData={setFormData}
             onCancel={() => setShowEditForm(false)}
             onSubmit={handleEditVersionSubmit}
-            handleFileUpload={handleFormFileUpload}
-            handleHashChange={handleFormHashChange}
             isEdit={true}
           />
         </div>
@@ -564,9 +515,27 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
           </div>
         </div>
         <div className="space-y-4">
-          {files.map((file) => (
-            <FileCard key={file.id} file={file} />
-          ))}
+          {files.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div
+                className={`w-16 h-16 mb-4 ${
+                  darkMode ? "text-gray-600" : "text-gray-400"
+                }`}
+              >
+                <FaFileAlt className="w-full h-full" />
+              </div>
+              <p className={`text-lg font-medium ${textClass}`}>
+                No Files Available
+              </p>
+              <p className={`mt-2 ${mutedTextClass}`}>
+                {isAdmin
+                  ? "Add installer or update files to make them available for download"
+                  : "No files are currently available for download"}
+              </p>
+            </div>
+          ) : (
+            files.map((file) => <FileCard key={file.id} file={file} />)
+          )}
         </div>
         <div
           className={`mt-6 p-4 rounded-lg ${

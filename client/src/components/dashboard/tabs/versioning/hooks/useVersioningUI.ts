@@ -9,8 +9,8 @@ export function useVersioningUI() {
       await navigator.clipboard.writeText(text);
       setCopiedHash(hashId);
       setTimeout(() => setCopiedHash(''), 2000);
-    } catch (err) {
-      // Optionally handle error
+    } catch {
+      console.error("Failed to copy text to clipboard:", text);
     }
   };
 

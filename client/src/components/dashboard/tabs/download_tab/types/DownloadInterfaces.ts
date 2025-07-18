@@ -1,5 +1,5 @@
 export interface DownloadItem {
-  id?: string; 
+  id: string; 
   name: string;
   type: "installers" | "documents" | "resources" | "updates";
   size?: string;
@@ -9,7 +9,6 @@ export interface DownloadItem {
 }
 
 export interface DownloadsProps {
-  downloadItems: DownloadItem[];
   cardClass: string;
   textClass: string;
   mutedTextClass: string;

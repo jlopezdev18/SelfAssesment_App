@@ -3,8 +3,7 @@ import { auth } from "../config"; // Adjust the path as necessary
 
 async function loginWithEmail(email: string, password: string) {
   try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    console.log("Logueado:", userCredential.user);
+    await signInWithEmailAndPassword(auth, email, password);
   } catch (error: unknown) {
     if (error instanceof Error) {
       console.error("Error:", error.message);

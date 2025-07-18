@@ -39,6 +39,7 @@ export const useDownload = () => {
               size: formatBytes(metadata.size || 0),
               path: `downloads/${folder}/${itemRef.name}`,
               downloadUrl: url,
+              id: ""
             });
           }
         }

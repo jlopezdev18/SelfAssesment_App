@@ -127,6 +127,122 @@ export function useCompanies(initialCompanies: Company[]) {
     }
   };
 
+  const editUser = async (
+  userId: string,
+  companyId: string,
+  form: NewUserForm,
+  onSuccess: () => void,
+  onError: () => void
+) => {
+  setLoading(true);
+  try {
+    const response = await axios.put(
+      `http://localhost:4000/api/company/update-user/${userId}`,
+      {
+        ...form,
+        active: true
+      }
+    );
+
+    if (response.status === 200) {
+      setCompanies((prev) =>
+        prev.map((company) => {
+          if (company.id === companyId) {
+            return {
+              ...company,
+              users: company.users.map((user) =>
+                user.id === userId
+                  ? {
+                      ...user,
+                      firstName: form.firstName,
+                      lastName: form.lastName,
+                      email: form.email
+                    }
+                  : user
+              )
+            };
+          }
+          return company;
+        })
+      );
+      onSuccess();
+      await Swal.fire({
+        icon: "success",
+        title: "User updated!",
+        text: "The user has been updated successfully.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      await fetchCompanies();
+    }
+  } catch {
+    onError();
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Error updating user.",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+
+const deleteUser = async (userId: string, companyId: string) => {
+  setLoading(true);
+  try {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "This will deactivate the user's access!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (!result.isConfirmed) {
+      setLoading(false);
+      return;
+    }
+
+    const response = await axios.delete(
+      `http://localhost:4000/api/company/delete-user/${companyId}/${userId}`
+    );
+
+    if (response.status === 200) {
+      setCompanies((prev) =>
+        prev.map((company) => {
+          if (company.id === companyId) {
+            return {
+              ...company,
+              users: company.users.filter((user) => user.id !== userId)
+            };
+          }
+          return company;
+        })
+      );
+
+      await Swal.fire({
+        icon: "success",
+        title: "User deleted!",
+        text: "The user has been deactivated successfully.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      await fetchCompanies();
+    }
+  } catch {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Error deleting user.",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+ 
+
  const deleteCompany = async (companyId: string, onError: () => void) => {
   setLoading(true);
   try {
@@ -156,7 +272,7 @@ export function useCompanies(initialCompanies: Company[]) {
       setCompanies((prev) =>
         prev.map((company) => 
           company.id === companyId 
-            ? { ...company, status: 'inactive', deleted: true }
+            ? { ...company, active: false, deleted: true }
             : company
         )
       );
@@ -181,13 +297,73 @@ export function useCompanies(initialCompanies: Company[]) {
   }
 };
 
-  return {
-    companies,
-    setCompanies,
-    addCompany,
-    deleteCompany,
-    addUserToCompany,
-    fetchCompanies,
-    loading,
-  };
+const updateCompany = async (
+  companyId: string,
+  form: NewCompanyForm,
+  onSuccess: () => void,
+  onError: () => void
+) => {
+  setLoading(true);
+  try {
+    const response = await axios.put(
+      `http://localhost:4000/api/company/update-company/${companyId}`,
+      {
+        ...form,
+        active: true
+      }
+    );
+
+    if (response.status === 200) {
+      setCompanies((prev) =>
+        prev.map((company) =>
+          company.id === companyId
+            ? {
+                ...company,
+                companyName: form.companyName,
+                companyEmail: form.companyEmail,
+                owner: {
+                  ...company.owner,
+                  firstName: form.firstName,
+                  lastName: form.lastName,
+                  email: form.email,
+                }
+              }
+            : company
+        )
+      );
+      onSuccess();
+      await Swal.fire({
+        icon: "success",
+        title: "Company updated!",
+        text: "The company has been updated successfully.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      await fetchCompanies(); // Refresh the list
+    }
+  } catch {
+    onError();
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Error updating company.",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Update the return statement to include updateCompany
+return {
+  companies,
+  setCompanies,
+  addCompany,
+  updateCompany,
+  deleteCompany,
+  addUserToCompany,
+  editUser,
+  deleteUser,
+  fetchCompanies,
+  loading,
+};
 }

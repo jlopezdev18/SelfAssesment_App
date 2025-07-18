@@ -1,24 +1,16 @@
 import { FaTimes, FaSave } from "react-icons/fa";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "../../../../firebase/config"; // Ajusta la ruta según tu estructura
+import type { VersionFormData } from "./types/VersioningInterfaces";
 
 interface VersionFormProps {
   darkMode: boolean;
   textClass: string;
   mutedTextClass: string;
-  formData: any;
-  setFormData: React.Dispatch<React.SetStateAction<any>>;
+  formData: VersionFormData;
+  setFormData: React.Dispatch<React.SetStateAction<VersionFormData>>;
   onCancel: () => void;
   onSubmit: () => void;
-  handleFileUpload: (
-    fileType: "installer" | "update",
-    file: File
-  ) => Promise<void>;
-  handleHashChange: (
-    fileType: "installer" | "update",
-    algorithm: string,
-    value: string
-  ) => void;
   isEdit: boolean;
 }
 
@@ -74,7 +66,7 @@ const VersionForm: React.FC<VersionFormProps> = ({
     await uploadBytes(storageRef, file);
     const url = await getDownloadURL(storageRef);
 
-    setFormData((prev: any) => ({
+    setFormData((prev: VersionFormData) => ({
       ...prev,
       files: {
         ...prev.files,
