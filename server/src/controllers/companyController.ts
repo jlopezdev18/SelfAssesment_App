@@ -165,7 +165,7 @@ export const addUserToCompany = async (req: Request, res: Response): Promise<any
 
 export const deleteCompany = async (req: Request, res: Response): Promise<any> => {
   const { companyId } = req.params;
-  console.log(companyId);
+  
 
    if (!companyId || companyId.trim() === '')  {
     return res.status(400).json({ error: "Company ID is required" });

@@ -162,8 +162,8 @@ export function useCompanies(initialCompanies: Company[]) {
       );
       await Swal.fire({
         icon: "success",
-        title: "Company deactivated!",
-        text: "The company has been deactivated successfully.",
+        title: "Company deleted!",
+        text: "The company has been deleted successfully.",
         timer: 2000,
         showConfirmButton: false,
       });

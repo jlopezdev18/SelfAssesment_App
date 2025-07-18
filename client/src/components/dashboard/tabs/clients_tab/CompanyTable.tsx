@@ -24,7 +24,7 @@ interface CompanyTableProps {
   onDropdown: (id: string | null) => void;
   isSelected: (id: string) => boolean;
   getStatusBadge: (status: string) => string;
-  formatDate: (date: string) => string;
+  formatDate: (date: { _seconds: number; _nanoseconds: number }) => string;
   cardClass: string;
   textClass: string;
   mutedTextClass: string;
@@ -71,7 +71,23 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
           </tr>
         </thead>
         <tbody className={cardClass}>
-          {companies.map(company => {
+          { !companies || companies.length === 0 ? (
+            <tr>
+              <td 
+                colSpan={7} 
+                className={`px-6 py-12 text-center ${mutedTextClass} border-b border-gray-200`}
+              >
+                <div className="flex flex-col items-center justify-center space-y-3">
+                  <FaBuilding className="w-8 h-8 text-gray-400" />
+                  <div className="text-lg font-medium">No Companies Available</div>
+                  <p className="text-sm">
+                    There are no companies registered at the moment.
+                  </p>
+                </div>
+              </td>
+            </tr>
+          ) :
+          (companies.map(company => {
             const isCompanySelected = isSelected(company.id);
             const isExpanded = expandedCompanies.includes(company.id);
             const totalUsers = company.users.length + 1;
@@ -115,16 +131,10 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
                   <td className={`px-6 py-4 whitespace-nowrap ${mutedTextClass}`}>
                     <div className={`text-sm ${mutedTextClass}`}>{company.companyEmail}</div>
                   </td>
-                  {/* <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={getStatusBadge(company.status)}>
-                      {company.status.charAt(0).toUpperCase() + company.status.slice(1)}
-                    </span>
-                  </td> */}
-                  <td className={`px-6 py-4 whitespace-nowrap text-sm ${textClass}`}>
-                    {company.nextPaymentDate && formatDate(company.nextPaymentDate)}
-                  </td>
+                  <td></td>
+                  <td></td>
                   <td className={`px-6 py-4 whitespace-nowrap text-center ${textClass}`}>
-                    <div className="flex justify-center gap-2">
+                    <div className="flex items-center justify-center">
                       <button
                         onClick={() => onOpenUserModal(company.id)}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
@@ -132,7 +142,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
                       >
                         <FaUserPlus className="w-4 h-4" />
                       </button>
-                      <div className="relative">
+                      <div className="absolute right-28">
                         <button
                           className={`p-2 hover:${darkMode ? "bg-gray-700" : "bg-gray-50"} rounded-full`}
                           onClick={() => onDropdown(activeDropdown === company.id ? null : company.id)}
@@ -179,14 +189,14 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
                       <td className={`px-6 py-3 whitespace-nowrap ${mutedTextClass}`}>
                         <div className={`text-sm ${mutedTextClass}`}>{company.owner.email}</div>
                       </td>
-                      {/* <td className="px-6 py-3 whitespace-nowrap">
-                        <span className={getStatusBadge(company.owner.status)}>
-                          {company.owner.status.charAt(0).toUpperCase() + company.owner.status.slice(1)}
+                       <td className="px-6 py-3 whitespace-nowrap">
+                        <span className={getStatusBadge(company.owner.active ? "active" : "inactive")}>
+                          {company.owner.active ? "Active" : "Inactive"}
                         </span>
-                      </td> */}
-                      {/* <td className={`px-6 py-3 whitespace-nowrap text-sm ${textClass}`}>
-                        {formatDate(company.owner.joinedDate)}
-                      </td> */}
+                      </td> 
+                      <td className={`px-6 py-3 whitespace-nowrap text-sm ${textClass}`}>
+                        {formatDate(company.createdAt)}
+                      </td>
                       <td className={`px-6 py-3 whitespace-nowrap text-center ${textClass}`}>
                         <button className={`p-2 hover:${darkMode ? "bg-gray-700" : "bg-gray-100"} rounded-full`}>
                           <SlOptionsVertical className="w-3 h-3 text-gray-400" />
@@ -218,7 +228,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
                           </span>
                         </td>
                         <td className={`px-6 py-3 whitespace-nowrap text-sm ${textClass}`}>
-                          {formatDate(user.joinedDate)}
+                          {formatDate(user.createdAt)}
                         </td>
                         <td className={`px-6 py-3 whitespace-nowrap text-center ${textClass}`}>
                           <button className={`p-2 hover:${darkMode ? "bg-gray-700" : "bg-gray-100"} rounded-full`}>
@@ -231,7 +241,8 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
                 )}
               </React.Fragment>
             );
-          })}
+            }))
+          }
         </tbody>
       </table>
     </div>

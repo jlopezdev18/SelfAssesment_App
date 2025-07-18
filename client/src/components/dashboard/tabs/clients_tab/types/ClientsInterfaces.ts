@@ -5,7 +5,8 @@ export interface User {
   email: string;
   role: "owner" | "user";
   status: "active" | "inactive" | "pending";
-  joinedDate: string;
+  createdAt: { _seconds: number; _nanoseconds: number };
+  active: boolean;
 }
 
 export interface Company {
@@ -18,8 +19,8 @@ export interface Company {
   nextPaymentDate: string;
   owner: User;
   users: User[];
-  createdDate: string;
-  deleted?: boolean; 
+  createdAt: { _seconds: number; _nanoseconds: number };
+  deleted?: boolean;
 }
 
 export interface CompanyDashboardProps {

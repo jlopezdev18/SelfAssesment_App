@@ -127,13 +127,12 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
+  const formatDate = (dateObj: { _seconds: number; _nanoseconds: number }) =>
+  new Date(dateObj._seconds * 1000).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 
   const isSelected = (id: string) => selectedCompanies.indexOf(id) !== -1;
 
