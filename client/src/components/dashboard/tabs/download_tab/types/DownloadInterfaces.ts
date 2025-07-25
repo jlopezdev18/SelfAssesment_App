@@ -1,11 +1,12 @@
 export interface DownloadItem {
-  id: string; 
+  id: string;
   name: string;
   type: "installers" | "documents" | "resources" | "updates";
   size?: string;
   updated?: string;
   path?: string;
   downloadUrl: string;
+  hashes?: Array<{ algorithm: string; hash: string }>;
 }
 
 export interface DownloadsProps {

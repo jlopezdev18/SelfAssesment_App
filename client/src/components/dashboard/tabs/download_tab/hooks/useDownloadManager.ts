@@ -1,7 +1,21 @@
 import { useState, useEffect } from "react";
-import { ref, uploadBytes, getDownloadURL, getMetadata, listAll, deleteObject } from "firebase/storage";
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  getMetadata,
+  listAll,
+  deleteObject,
+} from "firebase/storage";
 import { db, storage } from "../../../../../firebase/config";
-import { addDoc, collection, deleteDoc, doc, getDocs, updateDoc } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  updateDoc,
+} from "firebase/firestore";
 import type { DownloadItem } from "../types/DownloadInterfaces";
 import Swal from "sweetalert2";
 import type { VersionFile } from "../../versioning/types/VersioningInterfaces";
@@ -20,51 +34,78 @@ export function useDownloadManager() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-const fetchDownloads = async () => {
-  setLoading(true);
-  try {
-    const folders: DownloadItem["type"][] = [
-      "installers",
-      "updates",
-      "resources",
-      "documents",
-    ];
-    const items: DownloadItem[] = [];
+  const fetchDownloads = async () => {
+    setLoading(true);
+    try {
+      const folders: DownloadItem["type"][] = [
+        "installers",
+        "updates",
+        "resources",
+        "documents",
+      ];
+      const items: DownloadItem[] = [];
 
-    // Get all items from Storage
-    for (const folder of folders) {
-      const folderRef = ref(storage, `downloads/${folder}`);
-      const res = await listAll(folderRef);
+      // Get all documents from Firestore for hash data
+      const downloadDocs = await getDocs(collection(db, "downloads"));
+      type FirestoreDownloadData = {
+        id: string;
+        name: string;
+        path: string;
+        type: DownloadItem["type"];
+        updated: string;
+        size: string;
+        hashes?: Array<{ algorithm: string; hash: string }>;
+        [key: string]: unknown;
+      };
 
-      for (const itemRef of res.items) {
-        const url = await getDownloadURL(itemRef);
-        const metadata = await getMetadata(itemRef);
-        
-        // Create item from Storage data
-        items.push({
-          id: itemRef.name, // Using filename as id
-          name: itemRef.name,
-          path: `downloads/${folder}/${itemRef.name}`,
-          type: folder,
-          size: formatBytes(metadata.size || 0),
-          downloadUrl: url,
-          updated: metadata.updated || new Date().toLocaleString(),
-        } as DownloadItem);
+      const firestoreData = downloadDocs.docs.reduce((acc: Record<string, FirestoreDownloadData>, doc) => {
+        const data = doc.data() as FirestoreDownloadData;
+        acc[data.path] = { ...data, id: doc.id };
+        return acc;
+      }, {} as Record<string, FirestoreDownloadData>);
+
+      // Get all items from Storage maintaining folder structure
+      for (const folder of folders) {
+        const folderRef = ref(storage, `downloads/${folder}`);
+        const res = await listAll(folderRef);
+
+        for (const itemRef of res.items) {
+          const path = `downloads/${folder}/${itemRef.name}`;
+          const url = await getDownloadURL(itemRef);
+          const metadata = await getMetadata(itemRef);
+
+          // Merge Storage data with Firestore data if available
+          const firestoreItem = firestoreData[path];
+
+          items.push({
+            id: firestoreItem?.id || itemRef.name, // Use Firestore ID if available
+            name: itemRef.name,
+            path: path,
+            type: folder,
+            size: formatBytes(metadata.size || 0),
+            downloadUrl: url,
+            updated: metadata.updated || new Date().toLocaleString(),
+            // Include hashes from Firestore if present and file type is installer/update
+            ...(["installers", "updates"].includes(folder) &&
+            firestoreItem?.hashes
+              ? { hashes: firestoreItem.hashes }
+              : {}),
+          } as DownloadItem);
+        }
       }
-    }
 
-    setDownloads(items);
-  } catch (error) {
-    console.error("Error fetching files:", error);
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'Failed to fetch files. Please try again.',
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+      setDownloads(items);
+    } catch (error) {
+      console.error("Error fetching files:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to fetch files. Please try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const addItem = async (
     newItem: DownloadItem,
@@ -89,15 +130,19 @@ const fetchDownloads = async () => {
         ? new Date(metadata.updated).toLocaleString()
         : new Date().toLocaleString();
 
-      const docRef = await addDoc(collection(db, "downloads"), {
+      const docData = {
         id: "",
         name: file.name,
         path,
         type: newItem.type,
         updated,
         size,
-      });
-      
+        ...(newItem.type === "installers" || newItem.type === "updates"
+          ? { hashes: newItem.hashes || [] }
+          : {}),
+      };
+      const docRef = await addDoc(collection(db, "downloads"), docData);
+
       await updateDoc(docRef, { id: docRef.id });
 
       const itemToAdd = {
@@ -107,9 +152,12 @@ const fetchDownloads = async () => {
         size,
         updated,
         downloadUrl,
+        ...(newItem.type === "installers" || newItem.type === "updates"
+          ? { hashes: newItem.hashes || [] }
+          : {}),
       };
 
-      setDownloads(prev => [...prev, itemToAdd]);
+      setDownloads((prev) => [...prev, itemToAdd]);
       Swal.fire({
         icon: "success",
         title: "File uploaded successfully",
@@ -124,82 +172,85 @@ const fetchDownloads = async () => {
     }
   };
 
-const deleteItem = async (item: DownloadItem) => {
-  try {
-    const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: "You won't be able to revert this!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete it!'
-    });
+  const deleteItem = async (item: DownloadItem) => {
+    try {
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, delete it!",
+      });
 
-    if (!result.isConfirmed) return;
+      if (!result.isConfirmed) return;
 
-    setLoading(true);
+      setLoading(true);
 
-    // Delete from Storage
-    const storageRef = ref(storage, item.path);
-    await deleteObject(storageRef);
+      // Delete from Storage
+      const storageRef = ref(storage, item.path);
+      await deleteObject(storageRef);
 
-    // Delete from Firestore downloads collection
-    if (!item.id) throw new Error("Download item id is missing.");
-    await deleteDoc(doc(db, 'downloads', item.id));
+      // Delete from Firestore downloads collection
+      if (!item.id) throw new Error("Download item id is missing.");
+      await deleteDoc(doc(db, "downloads", item.id));
 
-    // If file is an installer or update, update versions collection
-    if (item.type === 'installers' || item.type === 'updates') {
-      // Get all versions
-      const versionsSnapshot = await getDocs(collection(db, 'versions'));
-      
-      for (const versionDoc of versionsSnapshot.docs) {
-        const versionData = versionDoc.data();
-        let wasModified = false;
+      // If file is an installer or update, update versions collection
+      if (item.type === "installers" || item.type === "updates") {
+        // Get all versions
+        const versionsSnapshot = await getDocs(collection(db, "versions"));
 
-        // Check and remove file from version's files array
-        if (versionData.files) {
-          const updatedFiles: VersionFile[] = versionData.files.filter((file: VersionFile) => 
-            file.filename !== item.name
-          );
+        for (const versionDoc of versionsSnapshot.docs) {
+          const versionData = versionDoc.data();
+          let wasModified = false;
 
-          if (updatedFiles.length !== versionData.files.length) {
-            wasModified = true;
-            // Update version document if files were modified
-            await updateDoc(doc(db, 'versions', versionDoc.id), {
-              files: updatedFiles
-            });
+          // Check and remove file from version's files array
+          if (versionData.files) {
+            const updatedFiles: VersionFile[] = versionData.files.filter(
+              (file: VersionFile) => file.filename !== item.name
+            );
+
+            if (updatedFiles.length !== versionData.files.length) {
+              wasModified = true;
+              // Update version document if files were modified
+              await updateDoc(doc(db, "versions", versionDoc.id), {
+                files: updatedFiles,
+              });
+            }
+          }
+
+          if (wasModified) {
+            console.log(
+              `Removed file reference from version: ${versionDoc.id}`
+            );
           }
         }
-
-        if (wasModified) {
-          console.log(`Removed file reference from version: ${versionDoc.id}`);
-        }
       }
+
+      // Update local state
+      setDownloads((prev) =>
+        prev.filter((download) => download.id !== item.id)
+      );
+
+      await Swal.fire({
+        icon: "success",
+        title: "Deleted!",
+        text: `${item.name} has been deleted.`,
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to delete the file. Please try again.",
+      });
+    } finally {
+      setLoading(false);
     }
-
-    // Update local state
-    setDownloads(prev => prev.filter(download => download.id !== item.id));
-
-    await Swal.fire({
-      icon: 'success',
-      title: 'Deleted!',
-      text: `${item.name} has been deleted.`,
-      timer: 1500,
-      showConfirmButton: false
-    });
-
-  } catch (error) {
-    console.error('Error deleting file:', error);
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'Failed to delete the file. Please try again.'
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   useEffect(() => {
     fetchDownloads();
@@ -213,6 +264,6 @@ const deleteItem = async (item: DownloadItem) => {
     setUploadError,
     addItem,
     deleteItem,
-    fetchDownloads
+    fetchDownloads,
   };
 }

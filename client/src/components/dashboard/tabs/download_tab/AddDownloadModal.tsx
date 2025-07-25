@@ -1,5 +1,11 @@
 import React from "react";
-import { FaTimes, FaSpinner, FaFile, FaTimesCircle, FaFileUpload } from "react-icons/fa";
+import {
+  FaTimes,
+  FaSpinner,
+  FaFile,
+  FaTimesCircle,
+  FaFileUpload,
+} from "react-icons/fa";
 import type { DownloadItem } from "./types/DownloadInterfaces";
 
 interface AddDownloadModalProps {
@@ -31,6 +37,9 @@ const AddDownloadModal: React.FC<AddDownloadModalProps> = ({
   cardClass,
   darkMode,
 }) => {
+  const showHashes =
+    newItem.type === "installers" || newItem.type === "updates";
+
   if (!open) return null;
   return (
     <div className="fixed inset-0 backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -80,6 +89,54 @@ const AddDownloadModal: React.FC<AddDownloadModalProps> = ({
                 <option value="updates">Update</option>
               </select>
             </div>
+            {showHashes && (
+              <div className="space-y-4">
+                <label className={`block text-sm font-medium ${textClass}`}>
+                  File Hashes
+                </label>
+                {["SHA512", "SHA384", "SHA256"].map((algorithm) => (
+                  <div key={algorithm}>
+                    <label
+                      className={`block text-xs font-medium ${textClass} mb-1`}
+                    >
+                      {algorithm}
+                    </label>
+                    <input
+                      type="text"
+                      value={
+                        newItem.hashes?.find((h) => h.algorithm === algorithm)
+                          ?.hash || ""
+                      }
+                      onChange={(e) => {
+                        const newHashes = [...(newItem.hashes || [])];
+                        const index = newHashes.findIndex(
+                          (h) => h.algorithm === algorithm
+                        );
+                        if (index >= 0) {
+                          newHashes[index] = {
+                            ...newHashes[index],
+                            hash: e.target.value,
+                          };
+                        } else {
+                          newHashes.push({ algorithm, hash: e.target.value });
+                        }
+                        setNewItem({
+                          ...newItem,
+                          hashes: newHashes,
+                        });
+                      }}
+                      className={`w-full px-3 py-2 rounded-lg border font-mono text-sm ${
+                        darkMode
+                          ? "bg-gray-800 border-gray-700 text-white"
+                          : "bg-white border-gray-200 text-gray-800"
+                      } focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                      placeholder={`Enter ${algorithm} hash`}
+                      disabled={uploading}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
             {/* File */}
             <div>
               <label className={`block text-sm font-medium ${textClass} mb-1`}>

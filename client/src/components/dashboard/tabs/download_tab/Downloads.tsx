@@ -14,7 +14,9 @@ const Downloads: React.FC<DownloadsProps> = ({
   getTypeIcon,
 }) => {
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "installers" | "documents" | "resources" | "updates">("all");
+  const [filter, setFilter] = useState<
+    "all" | "installers" | "documents" | "resources" | "updates"
+  >("all");
   const [showAddModal, setShowAddModal] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [newItem, setNewItem] = useState<DownloadItem>({
@@ -24,14 +26,28 @@ const Downloads: React.FC<DownloadsProps> = ({
     size: "",
     updated: "",
     downloadUrl: "",
+    hashes: [
+      { algorithm: "SHA512", hash: "" },
+      { algorithm: "SHA384", hash: "" },
+      { algorithm: "SHA256", hash: "" },
+    ],
   });
 
   const isAdmin = useIsAdmin();
-  const { downloads, uploading, uploadError, setUploadError, addItem, deleteItem, loading } = useDownloadManager();
+  const {
+    downloads,
+    uploading,
+    uploadError,
+    setUploadError,
+    addItem,
+    deleteItem,
+    loading,
+  } = useDownloadManager();
   const filteredItems = downloads.filter((item) => {
     const matchesType = filter === "all" ? true : item.type === filter;
-    const matchesSearch =
-      item.name.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = item.name
+      .toLowerCase()
+      .includes(search.toLowerCase());
     return matchesType && matchesSearch;
   });
 
@@ -52,7 +68,6 @@ const Downloads: React.FC<DownloadsProps> = ({
   const handleAddItem = () => {
     addItem(newItem, file, handleModalClose);
   };
-
 
   return (
     <div className="p-8">
@@ -92,7 +107,12 @@ const Downloads: React.FC<DownloadsProps> = ({
           value={filter}
           onChange={(e) =>
             setFilter(
-              e.target.value as "all" | "installers" | "documents" | "resources" | "updates"
+              e.target.value as
+                | "all"
+                | "installers"
+                | "documents"
+                | "resources"
+                | "updates"
             )
           }
           className={`py-2 px-4 rounded-lg border ${
