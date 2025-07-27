@@ -62,6 +62,7 @@ export const createCompany = async (
       lastName,
       role: "user",
       status: "pending",
+      active: true,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       nextPaymentDate: null,
     });
