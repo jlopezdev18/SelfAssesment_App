@@ -71,12 +71,18 @@ export async function sendReleaseEmailToAllUsers(
         <div style="line-height: 1.6;">
           ${formattedContent}
         </div>
+        <p style="font-size: 16px; color: #555; margin: 8px 0;">
+          To learn more about the new features, visit our <a href="https://selfassesmentapp.netlify.app" style="color:#2563eb;text-decoration:underline;" target="_blank">Self Assessment</a>.
+        </p>
         <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #ddd;">
           <p style="font-size: 16px; color: #555; margin: 8px 0;">
             <strong>Version:</strong> ${version}
           </p>
           <p style="font-size: 16px; color: #555; margin: 8px 0;">
             <strong>Tags:</strong> ${tags.join(", ")}
+          </p>
+          <p style="font-size: 16px; color: #555; margin: 8px 0;">
+            Thank you for being a part of our community! We hope you enjoy the new features and improvements.
           </p>
         </div>
       </div>
