@@ -32,7 +32,7 @@ export async function sendEmailToUser(email: string, password: string) {
       <p style="font-size: 16px; color: #555;">
         For security reasons, this password is valid for <strong>10 minutes only</strong>. Please log in and update your password immediately.
       </p>
-      <a href="http://localhost:5173/" target="_blank"
+      <a href="https://selfassesmentapp.netlify.app/" target="_blank"
          style="display: inline-block; background-color: #1a73e8; color: white; padding: 12px 24px; border-radius: 5px; text-decoration: none; font-weight: bold; margin-top: 20px;">
         Log In Now
       </a>
@@ -108,7 +108,7 @@ export async function sendEmailToMainUser(email: string, password: string) {
       <p style="font-size: 16px; color: #555;">
         For security reasons, this password is valid for <strong>10 minutes only</strong>. Please log in and update your password immediately.
       </p>
-      <a href="http://localhost:5173/" target="_blank"
+      <a href="https://selfassesmentapp.netlify.app/" target="_blank"
          style="display: inline-block; background-color: #1a73e8; color: white; padding: 12px 24px; border-radius: 5px; text-decoration: none; font-weight: bold; margin-top: 20px;">
         Log In Now
       </a>
