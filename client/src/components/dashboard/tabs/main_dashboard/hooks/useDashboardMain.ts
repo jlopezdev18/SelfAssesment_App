@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import type { ReleasePost } from "../types/DashboardMainInterfaces";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:4000";
 
 export function useDashboardMain(postsPerSlide: number) {
   const [releasePosts, setReleasePosts] = useState<ReleasePost[]>([]);
@@ -17,7 +18,7 @@ export function useDashboardMain(postsPerSlide: number) {
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("http://localhost:4000/api/release-posts");
+      const res = await axios.get(`${API_URL}/api/release-posts`);
       setReleasePosts(res.data as ReleasePost[]);
       setError(null);
     } catch {
@@ -31,7 +32,7 @@ export function useDashboardMain(postsPerSlide: number) {
   const addReleasePost = async (postData: ReleasePost) => {
     setLoading(true);
     try {
-      const res = await axios.post("http://localhost:4000/api/release-posts/addPost", postData);
+      const res = await axios.post(`${API_URL}/api/release-posts/addPost`, postData);
       await fetchPosts();
       setError(null);
       return res.data;
@@ -45,7 +46,7 @@ export function useDashboardMain(postsPerSlide: number) {
   const deleteReleasePost = async (postId: string) => {
     setLoading(true);
     try {
-      await axios.delete(`http://localhost:4000/api/release-posts/${postId}`);
+      await axios.delete(`${API_URL}/api/release-posts/${postId}`);
       setReleasePosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
       setError(null);
     } catch {

@@ -7,6 +7,7 @@ import type {
 } from "../types/ClientsInterfaces";
 import axios from "axios";
 import Swal from "sweetalert2";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:4000";
 
 export function useCompanies(initialCompanies: Company[]) {
   const [companies, setCompanies] = useState<Company[]>(initialCompanies);
@@ -15,9 +16,7 @@ export function useCompanies(initialCompanies: Company[]) {
   const fetchCompanies = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(
-        "http://localhost:4000/api/company/companies"
-      );
+      const response = await axios.get(`${API_URL}/api/company/companies`);
       const companies = response.data as Company[];
       const activeCompanies = companies.filter(company => !company.deleted);
 
@@ -30,9 +29,7 @@ export function useCompanies(initialCompanies: Company[]) {
           if (userIds && userIds.length > 0) {
             users = await Promise.all(
               userIds.map(async (uid) => {
-                const res = await axios.get(
-                  `http://localhost:4000/api/users/${uid}`
-                );
+                const res = await axios.get(`${API_URL}/api/users/${uid}`);
                 return res.data as User;
               })
             );
@@ -62,7 +59,7 @@ export function useCompanies(initialCompanies: Company[]) {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://localhost:4000/api/company/create-company",
+        `${API_URL}/api/company/create-company`,
         form
       );
       setCompanies((prev) => [...prev, response.data as Company]);
@@ -96,7 +93,7 @@ export function useCompanies(initialCompanies: Company[]) {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://localhost:4000/api/company/add-user-to-company",
+        `${API_URL}/api/company/add-user-to-company`,
         { companyId, ...form }
       );
       setCompanies((prev) =>
@@ -137,7 +134,7 @@ export function useCompanies(initialCompanies: Company[]) {
   setLoading(true);
   try {
     const response = await axios.put(
-      `http://localhost:4000/api/company/update-user/${userId}`,
+      `${API_URL}/api/company/update-user/${userId}`,
       {
         ...form,
         active: true
@@ -206,7 +203,7 @@ const deleteUser = async (userId: string, companyId: string) => {
     }
 
     const response = await axios.delete(
-      `http://localhost:4000/api/company/delete-user/${companyId}/${userId}`
+      `${API_URL}/api/company/delete-user/${companyId}/${userId}`
     );
 
     if (response.status === 200) {
@@ -260,7 +257,7 @@ const deleteUser = async (userId: string, companyId: string) => {
       return;
     }
     const response = await axios.delete(
-      `http://localhost:4000/api/company/delete-company/${companyId}`,
+      `${API_URL}/api/company/delete-company/${companyId}`,
       {
         headers: {
           'Content-Type': 'application/json'
@@ -306,7 +303,7 @@ const updateCompany = async (
   setLoading(true);
   try {
     const response = await axios.put(
-      `http://localhost:4000/api/company/update-company/${companyId}`,
+      `${API_URL}/api/company/update-company/${companyId}`,
       {
         ...form,
         active: true

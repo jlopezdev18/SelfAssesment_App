@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import { db } from "../../../../../firebase/config";
-import { collection, addDoc, updateDoc, doc, deleteDoc } from "firebase/firestore";
-
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  doc,
+  deleteDoc,
+} from "firebase/firestore";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:4000";
 export interface VersionFile {
   id: string;
   filename: string;
@@ -37,7 +43,7 @@ async function syncFileWithDownloads(file: VersionFile) {
       size: file.size,
       updated: new Date().toISOString(),
       downloadUrl: file.downloadUrl,
-      hashes: file.hashes
+      hashes: file.hashes,
     };
 
     // Add new document to downloads collection
@@ -59,7 +65,9 @@ export function useLatestVersion() {
   const fetchLatestVersion = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get("http://localhost:4000/api/versions/latest");
+      const response = await axios.get(
+        `${API_URL}/api/versions/latest`
+      );
       setData(response.data as VersionData);
       setError(null);
     } catch (err) {
@@ -91,11 +99,11 @@ export function useLatestVersion() {
       // Update version data with download references
       const updatedVersionData = {
         ...versionData,
-        files: updatedFiles
+        files: updatedFiles,
       };
 
       const response = await axios.post(
-        "http://localhost:4000/api/versions",
+        `${API_URL}/api/versions`,
         updatedVersionData
       );
 
@@ -114,7 +122,10 @@ export function useLatestVersion() {
     }
   };
 
-  const updateVersion = async (id: string | undefined, versionData: VersionData) => {
+  const updateVersion = async (
+    id: string | undefined,
+    versionData: VersionData
+  ) => {
     setLoading(true);
     try {
       // Sync updated files with downloads collection
@@ -127,7 +138,7 @@ export function useLatestVersion() {
               size: file.size,
               downloadUrl: file.downloadUrl,
               hashes: file.hashes,
-              updated: new Date().toISOString()
+              updated: new Date().toISOString(),
             });
             return file;
           } else {
@@ -141,13 +152,10 @@ export function useLatestVersion() {
       // Update version with the latest file information
       const updatedVersionData = {
         ...versionData,
-        files: updatedFiles
+        files: updatedFiles,
       };
 
-      await axios.put(
-        `http://localhost:4000/api/versions/${id}`,
-        updatedVersionData
-      );
+      await axios.put(`${API_URL}/api/versions/${id}`, updatedVersionData);
 
       await fetchLatestVersion();
       setError(null);
@@ -168,7 +176,7 @@ export function useLatestVersion() {
     try {
       // Get version data to find associated downloads
       const versionToDelete = data?.id === id ? data : null;
-      
+
       if (versionToDelete) {
         // Delete associated downloads
         await Promise.all(
@@ -180,7 +188,7 @@ export function useLatestVersion() {
         );
       }
 
-      await axios.delete(`http://localhost:4000/api/versions/${id}`);
+      await axios.delete(`${API_URL}/api/versions/${id}`);
       await fetchLatestVersion();
       setError(null);
     } catch (err: unknown) {
