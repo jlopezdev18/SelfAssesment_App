@@ -75,6 +75,7 @@ export const createCompany = async (
         lastName,
         email,
         uid: user.uid,
+        active: true
       },
     };
 
@@ -398,7 +399,7 @@ export const deleteCompany = async (
       });
     });
     await batch.commit();
-    
+
     const companyDoc = await admin
       .firestore()
       .collection("companies")
