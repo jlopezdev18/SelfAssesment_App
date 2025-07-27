@@ -8,6 +8,7 @@ export interface VersionFile {
   hashes: HashInfo[];
   size?: string;
   type: 'installer' | 'update';
+  downloadId?: string;
 }
 
 export interface VersionInfo {
@@ -33,6 +34,7 @@ interface FileData {
   size: string;
   downloadUrl: string;
   hashes: HashInfo[];
+  downloadId: string;
 }
 
 interface FilesData {
@@ -46,4 +48,5 @@ export interface VersionFormData {
   releaseType: string;
   description: string;
   files: FilesData;
+
 }

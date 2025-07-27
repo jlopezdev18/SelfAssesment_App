@@ -14,6 +14,8 @@ import VersionForm from "./VersionForm";
 import type { VersioningProps } from "./types/VersioningInterfaces";
 import { useLatestVersion } from "./hooks/useLatestVersion";
 import Swal from "sweetalert2";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { storage } from "../../../../firebase/config";
 
 interface FileProps {
   id: string;
@@ -22,6 +24,7 @@ interface FileProps {
   size: string;
   downloadUrl: string;
   hashes: { algorithm: string; hash: string }[];
+  downloadId: string;
 }
 
 const EnhancedVersioning: React.FC<VersioningProps> = ({
@@ -41,6 +44,11 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
   const [expandedFile, setExpandedFile] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
+  const [selectedInstallerFile, setSelectedInstallerFile] =
+    useState<File | null>(null);
+  const [selectedUpdateFile, setSelectedUpdateFile] = useState<File | null>(
+    null
+  );
 
   // Local files state to avoid losing focus on edit
   const [files, setFiles] = useState<FileProps[]>([]);
@@ -50,6 +58,7 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
         versionData.files.map((file) => ({
           ...file,
           type: file.type === "installer" ? "installer" : "update",
+          downloadId: file.downloadId ?? "",
         }))
       );
     }
@@ -72,6 +81,7 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
           { algorithm: "SHA384", hash: "" },
           { algorithm: "SHA256", hash: "" },
         ],
+        downloadId: "",
       },
       update: {
         filename: "",
@@ -83,6 +93,7 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
           { algorithm: "SHA384", hash: "" },
           { algorithm: "SHA256", hash: "" },
         ],
+        downloadId: "",
       },
     },
   });
@@ -96,27 +107,69 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
         releaseType: versionData.releaseType,
         description: versionData.description,
         files: {
-          installer:  {
-            filename: versionData.files.find((f) => f.type === "installer")?.filename || "",
+          installer: {
+            filename:
+              versionData.files.find((f) => f.type === "installer")?.filename ||
+              "",
             type: "installer",
-            size: versionData.files.find((f) => f.type === "installer")?.size || "",
-            downloadUrl: versionData.files.find((f) => f.type === "installer")?.downloadUrl || "",
+            size:
+              versionData.files.find((f) => f.type === "installer")?.size || "",
+            downloadUrl:
+              versionData.files.find((f) => f.type === "installer")
+                ?.downloadUrl || "",
             hashes: [
-              { algorithm: "SHA512", hash: versionData.files.find((f) => f.type === "installer")?.hashes[0]?.hash || "" },
-              { algorithm: "SHA384", hash: versionData.files.find((f) => f.type === "installer")?.hashes[1]?.hash || "" },
-              { algorithm: "SHA256", hash: versionData.files.find((f) => f.type === "installer")?.hashes[2]?.hash || "" },
+              {
+                algorithm: "SHA512",
+                hash:
+                  versionData.files.find((f) => f.type === "installer")
+                    ?.hashes[0]?.hash || "",
+              },
+              {
+                algorithm: "SHA384",
+                hash:
+                  versionData.files.find((f) => f.type === "installer")
+                    ?.hashes[1]?.hash || "",
+              },
+              {
+                algorithm: "SHA256",
+                hash:
+                  versionData.files.find((f) => f.type === "installer")
+                    ?.hashes[2]?.hash || "",
+              },
             ],
+            downloadId: versionData.files.find((f) => f.type === "installer")?.downloadId || "",
           },
           update: {
-            filename: versionData.files.find((f) => f.type === "update")?.filename || "",
+            filename:
+              versionData.files.find((f) => f.type === "update")?.filename ||
+              "",
             type: "update",
-            size: versionData.files.find((f) => f.type === "update")?.size || "",
-            downloadUrl: versionData.files.find((f) => f.type === "update")?.downloadUrl || "",
+            size:
+              versionData.files.find((f) => f.type === "update")?.size || "",
+            downloadUrl:
+              versionData.files.find((f) => f.type === "update")?.downloadUrl ||
+              "",
             hashes: [
-              { algorithm: "SHA512", hash: versionData.files.find((f) => f.type === "update")?.hashes[0]?.hash || "" },
-              { algorithm: "SHA384", hash: versionData.files.find((f) => f.type === "update")?.hashes[1]?.hash || "" },
-              { algorithm: "SHA256", hash: versionData.files.find((f) => f.type === "update")?.hashes[2]?.hash || "" },
+              {
+                algorithm: "SHA512",
+                hash:
+                  versionData.files.find((f) => f.type === "update")?.hashes[0]
+                    ?.hash || "",
+              },
+              {
+                algorithm: "SHA384",
+                hash:
+                  versionData.files.find((f) => f.type === "update")?.hashes[1]
+                    ?.hash || "",
+              },
+              {
+                algorithm: "SHA256",
+                hash:
+                  versionData.files.find((f) => f.type === "update")?.hashes[2]
+                    ?.hash || "",
+              },
             ],
+            downloadId: versionData.files.find((f) => f.type === "update")?.downloadId || "",
           },
         },
       });
@@ -141,7 +194,6 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
     }
   };
 
- 
   // --- ADD VERSION ---
   const handleSubmit = async (): Promise<void> => {
     if (!formData.version || !formData.releaseType || !formData.description) {
@@ -149,17 +201,42 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
       return;
     }
 
+    let installerDownloadUrl = formData.files.installer.downloadUrl;
+    let updateDownloadUrl = formData.files.update.downloadUrl;
+
+    // Upload installer file if selected
+    if (selectedInstallerFile) {
+      const installerRef = ref(
+        storage,
+        `downloads/installers/${selectedInstallerFile.name}`
+      );
+      await uploadBytes(installerRef, selectedInstallerFile);
+      installerDownloadUrl = await getDownloadURL(installerRef);
+    }
+
+    // Upload update file if selected
+    if (selectedUpdateFile) {
+      const updateRef = ref(
+        storage,
+        `downloads/updates/${selectedUpdateFile.name}`
+      );
+      await uploadBytes(updateRef, selectedUpdateFile);
+      updateDownloadUrl = await getDownloadURL(updateRef);
+    }
+
     const filesToAdd = [];
     if (formData.files.installer.filename && formData.files.installer.size) {
       filesToAdd.push({
         ...formData.files.installer,
         id: Date.now().toString(),
+        downloadUrl: installerDownloadUrl,
       });
     }
     if (formData.files.update.filename && formData.files.update.size) {
       filesToAdd.push({
         ...formData.files.update,
         id: (Date.now() + 1).toString(),
+        downloadUrl: updateDownloadUrl,
       });
     }
 
@@ -169,7 +246,7 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
     }
 
     const today = new Date();
-    const formattedDate = today.toISOString().slice(0, 10);
+    const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")} ${String(today.getHours()).padStart(2, "0")}:${String(today.getMinutes()).padStart(2, "0")}`;
 
     const dataToSubmit = {
       version: formData.version,
@@ -199,6 +276,7 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
             { algorithm: "SHA384", hash: "" },
             { algorithm: "SHA256", hash: "" },
           ],
+          downloadId: "",
         },
         update: {
           filename: "",
@@ -210,9 +288,13 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
             { algorithm: "SHA384", hash: "" },
             { algorithm: "SHA256", hash: "" },
           ],
+          downloadId: "",
         },
       },
     });
+
+    setSelectedInstallerFile(null);
+    setSelectedUpdateFile(null);
   };
 
   // --- EDIT VERSION ---
@@ -246,7 +328,6 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
     setShowEditForm(false);
     Swal.fire("Version updated!", "", "success");
   };
-
 
   // --- FILE CARD ---
   const FileCard = ({ file }: { file: FileProps }) => {
@@ -454,6 +535,8 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
             mutedTextClass={mutedTextClass}
             formData={formData}
             setFormData={setFormData}
+            setSelectedInstallerFile={setSelectedInstallerFile}
+            setSelectedUpdateFile={setSelectedUpdateFile}
             onCancel={() => setShowAddForm(false)}
             onSubmit={handleSubmit}
             isEdit={false}
@@ -477,6 +560,8 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
             mutedTextClass={mutedTextClass}
             formData={formData}
             setFormData={setFormData}
+            setSelectedInstallerFile={setSelectedInstallerFile}
+            setSelectedUpdateFile={setSelectedUpdateFile}
             onCancel={() => setShowEditForm(false)}
             onSubmit={handleEditVersionSubmit}
             isEdit={true}

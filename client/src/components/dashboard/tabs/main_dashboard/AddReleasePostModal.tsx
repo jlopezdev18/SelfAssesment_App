@@ -28,9 +28,7 @@ Our team has been working hard to enhance your user experience, address any bugs
 Here's how to get started:
 
 Visit the download page.
-Search for the latest version, Version 1.2.0.
-Under Download Links & More Click on “SelfAssessmentApp - Update - Ver 1.2.0” to download the latest version.
-Follow the “Install Update Guide"
+
 
 We sincerely appreciate your continued support, and we're confident that you'll love the enhancements we've made.
 

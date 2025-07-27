@@ -42,7 +42,7 @@ async function syncFileWithDownloads(file: VersionFile) {
 
     // Add new document to downloads collection
     const docRef = await addDoc(downloadsRef, downloadData);
-    await updateDoc(doc(db, "downloads", docRef.id), { id: docRef.id });
+    await updateDoc(doc(db, "downloads", docRef.id), { downloadId: docRef.id });
 
     return docRef.id;
   } catch (error) {
