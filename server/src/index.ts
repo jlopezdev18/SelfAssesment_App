@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import{ authRoutes, companyRoutes, userRoute, releasePostRoutes, versionRoutes } from './routes/index';
-import admin from './firebase';
 
 dotenv.config();
 
