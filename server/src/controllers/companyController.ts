@@ -41,11 +41,9 @@ export const createCompany = async (
     } catch (emailError) {
       // Si el email falla, elimina el usuario creado en Auth
       await admin.auth().deleteUser(user.uid);
-      return res
-        .status(500)
-        .json({
-          error: "No se pudo enviar el correo al usuario. Intenta de nuevo.",
-        });
+      return res.status(500).json({
+        error: "No se pudo enviar el correo al usuario. Intenta de nuevo.",
+      });
     }
 
     // 3. Agregar custom claims
@@ -186,9 +184,9 @@ export const updateUserInCompany = async (
   req: Request,
   res: Response
 ): Promise<any> => {
-  const {userId} = req.params; 
-  const {firstName, lastName, email, active } = req.body;
-  if ( !firstName || !lastName || !email) {
+  const { userId } = req.params;
+  const { firstName, lastName, email, active } = req.body;
+  if (!firstName || !lastName || !email) {
     return res.status(400).json({ error: "All fields are required" });
   }
 
@@ -200,14 +198,18 @@ export const updateUserInCompany = async (
     });
 
     // 2. Update user in Firestore "users" collection
-    await admin.firestore().collection("users").doc(userId).update({
-      firstName,
-      lastName,
-      displayName: `${firstName} ${lastName}`,
-      email,
-      active,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+    await admin
+      .firestore()
+      .collection("users")
+      .doc(userId)
+      .update({
+        firstName,
+        lastName,
+        displayName: `${firstName} ${lastName}`,
+        email,
+        active,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
 
     return res.status(200).json({
       message: "User updated successfully",
@@ -225,15 +227,21 @@ export const deleteUserFromCompany = async (
   res: Response
 ): Promise<any> => {
   const { userId, companyId } = req.params;
-  
+
   if (!userId || !companyId) {
-    return res.status(400).json({ error: "User ID and Company ID are required" });
+    return res
+      .status(400)
+      .json({ error: "User ID and Company ID are required" });
   }
 
   try {
     // 1. Check if user exists and is not already deleted
-    const userDoc = await admin.firestore().collection("users").doc(userId).get();
-    
+    const userDoc = await admin
+      .firestore()
+      .collection("users")
+      .doc(userId)
+      .get();
+
     if (!userDoc.exists) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -256,20 +264,19 @@ export const deleteUserFromCompany = async (
       deleted: true,
       deletedAt: admin.firestore.FieldValue.serverTimestamp(),
       status: "inactive",
-      lastModified: admin.firestore.FieldValue.serverTimestamp()
+      lastModified: admin.firestore.FieldValue.serverTimestamp(),
     });
 
     // 4. Disable user in Firebase Auth instead of deleting
     await admin.auth().updateUser(userId, {
-      disabled: true
+      disabled: true,
     });
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       message: "User deleted successfully",
       userId,
-      companyId
+      companyId,
     });
-
   } catch (err: any) {
     console.error("Error deleting user:", err);
     return res.status(500).json({ error: err.message });
@@ -391,7 +398,18 @@ export const deleteCompany = async (
       });
     });
     await batch.commit();
-
+    
+    const companyDoc = await admin
+      .firestore()
+      .collection("companies")
+      .doc(companyId)
+      .get();
+    const ownerUid = companyDoc.data()?.owner?.uid;
+    if (ownerUid) {
+      await admin.auth().updateUser(ownerUid, {
+        disabled: true,
+      });
+    }
     return res
       .status(200)
       .json({ message: "Company and related users deleted." });
