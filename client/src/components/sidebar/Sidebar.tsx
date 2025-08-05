@@ -34,8 +34,6 @@ interface SidebarProps {
   sidebarClass: string;
 }
 
-
-
 const Sidebar: React.FC<SidebarProps> = ({
   sidebarCollapsed,
   setSidebarCollapsed,
