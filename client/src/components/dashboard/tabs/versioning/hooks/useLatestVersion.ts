@@ -8,7 +8,7 @@ import {
   doc,
   deleteDoc,
 } from "firebase/firestore";
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:4000";
+const API_URL = import.meta.env.REACT_APP_API_URL || "http://localhost:4000";
 export interface VersionFile {
   id: string;
   filename: string;

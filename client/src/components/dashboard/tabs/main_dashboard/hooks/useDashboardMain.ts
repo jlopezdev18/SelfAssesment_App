@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import type { ReleasePost } from "../types/DashboardMainInterfaces";
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:4000";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 export function useDashboardMain(postsPerSlide: number) {
   const [releasePosts, setReleasePosts] = useState<ReleasePost[]>([]);

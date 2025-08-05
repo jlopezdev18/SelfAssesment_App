@@ -7,7 +7,7 @@ import type {
 } from "../types/ClientsInterfaces";
 import axios from "axios";
 import Swal from "sweetalert2";
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:4000";
+const API_URL = import.meta.env.REACT_APP_API_URL || "http://localhost:4000";
 
 export function useCompanies(initialCompanies: Company[]) {
   const [companies, setCompanies] = useState<Company[]>(initialCompanies);

@@ -15,7 +15,7 @@ export default function Login({ onShowResetForm }: { onShowResetForm: () => void
     setIsLoading(true);
     try {
       await loginWithEmail(email, password);
-
+        
       // Check for firstTimeLogin claim
       const auth = getAuth();
       const user = auth.currentUser;
