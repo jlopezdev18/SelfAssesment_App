@@ -1,15 +1,14 @@
+// Dashboard.tsx
 import React, { useState } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Sidebar from "../sidebar/Sidebar";
 import { DashboardMain, Downloads, Settings, ClientsDashboard, Versioning } from "./tabs";
 import { FaDownload, FaFileAlt, FaCog } from "react-icons/fa";
 import { useIsAdmin } from "../../hooks/useIsAdmin";
 
 const Dashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "downloads" | "settings" | "versioning" | "clients">("dashboard");
   const [darkMode, setDarkMode] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
- 
 
   const isAdmin = useIsAdmin();
 
@@ -44,48 +43,67 @@ const Dashboard: React.FC = () => {
           setSidebarCollapsed={setSidebarCollapsed}
           darkMode={darkMode}
           setDarkMode={setDarkMode}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
           mutedTextClass={mutedTextClass}
           textClass={textClass}
           sidebarClass={sidebarClass}
         />
         <div className="flex-1 overflow-auto">
-          {activeTab === "dashboard" && (
-            <DashboardMain
-              darkMode={darkMode}
-              cardClass={cardClass}
-              textClass={textClass}
-              mutedTextClass={mutedTextClass}
+          <Routes>
+            <Route 
+              path="/" 
+              element={<Navigate to="/dashboard/main" replace />} 
             />
-          )}
-          {activeTab === "downloads" && (
-            <Downloads
-              cardClass={cardClass}
-              textClass={textClass}
-              mutedTextClass={mutedTextClass}
-              darkMode={darkMode}
-              getTypeIcon={getTypeIcon}
+            <Route 
+              path="/main" 
+              element={
+                <DashboardMain
+                  darkMode={darkMode}
+                  cardClass={cardClass}
+                  textClass={textClass}
+                  mutedTextClass={mutedTextClass}
+                />
+              } 
             />
-          )}
-          {activeTab === "versioning" && (
-            <Versioning
-              cardClass={cardClass}
-              textClass={textClass}
-              mutedTextClass={mutedTextClass}
-              darkMode={darkMode}
-              isAdmin={isAdmin}
+            <Route 
+              path="/downloads" 
+              element={
+                <Downloads
+                  cardClass={cardClass}
+                  textClass={textClass}
+                  mutedTextClass={mutedTextClass}
+                  darkMode={darkMode}
+                  getTypeIcon={getTypeIcon}
+                />
+              } 
             />
-          )}
-          {activeTab === "settings" && <Settings darkMode={darkMode} />}
-          {activeTab === "clients" && (
-            <ClientsDashboard
-              cardClass={cardClass}
-              textClass={textClass}
-              mutedTextClass={mutedTextClass}
-              darkMode={darkMode}
+            <Route 
+              path="/versioning" 
+              element={
+                <Versioning
+                  cardClass={cardClass}
+                  textClass={textClass}
+                  mutedTextClass={mutedTextClass}
+                  darkMode={darkMode}
+                  isAdmin={isAdmin}
+                />
+              } 
             />
-          )}
+            <Route 
+              path="/settings" 
+              element={<Settings darkMode={darkMode} />} 
+            />
+            <Route 
+              path="/clients" 
+              element={
+                <ClientsDashboard
+                  cardClass={cardClass}
+                  textClass={textClass}
+                  mutedTextClass={mutedTextClass}
+                  darkMode={darkMode}
+                />
+              } 
+            />
+          </Routes>
         </div>
       </div>
     </div>
