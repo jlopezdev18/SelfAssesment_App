@@ -1,11 +1,15 @@
 import React from "react";
-import { ChevronLeft, ChevronRight, Newspaper } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Newspaper,
+  RefreshCw,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import ReleasePostCard from "./ReleasePostCard";
 import type { ReleasePost } from "./types/DashboardMainInterfaces";
 import { useDashboardMain } from "./hooks/useDashboardMain";
-import ClipLoader from "react-spinners/ClipLoader";
 
 interface ReleasePostCarouselProps {
   releasePosts?: ReleasePost[];
@@ -23,21 +27,23 @@ interface ReleasePostCarouselProps {
 const ReleasePostCarousel: React.FC<ReleasePostCarouselProps> = ({
   releasePosts = [],
   postsPerSlide = 3,
+  cardClass,
   darkMode,
   onPostClick,
   formatDate,
   handleDeletePost,
   loading,
   isAdmin,
+  textClass,
 }) => {
   const { currentSlide, setCurrentSlide, nextSlide, prevSlide, totalSlides } =
     useDashboardMain(postsPerSlide);
-
+ console.log(textClass,darkMode);
   return (
-    <Card className="hover:shadow-lg transition-shadow">
+    <Card className={`hover:shadow-lg transition-shadow ${darkMode ? "bg-gray-800 text-white" : "bg-white"}`}>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-bold">App Release Updates</h3>
+          <h3 className={`text-xl font-bold ${textClass}`}>App Release Updates</h3>
           {!loading && releasePosts.length > 0 && (
             <div className="flex items-center space-x-2">
               <Button
@@ -45,37 +51,36 @@ const ReleasePostCarousel: React.FC<ReleasePostCarouselProps> = ({
                 size="icon"
                 onClick={prevSlide}
                 disabled={currentSlide === 0}
-                className="h-8 w-8"
+                className={`h-8 w-8 ${cardClass}`}
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className={`w-4 h-4 ${textClass}`} />
               </Button>
               <Button
                 variant="outline"
                 size="icon"
                 onClick={nextSlide}
                 disabled={currentSlide >= totalSlides - 1}
-                className="h-8 w-8"
+                className={`h-8 w-8 ${cardClass}`}
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className={`w-4 h-4 ${textClass}`} />
               </Button>
             </div>
           )}
         </div>
       </CardHeader>
-      
+
       <CardContent>
         <div className="overflow-hidden min-h-[300px]">
           {loading ? (
-            <div className="flex flex-col items-center justify-center h-[300px]">
-              <ClipLoader color={darkMode ? "#fff" : "#000"} size={40} />
-              <p className="mt-4">Loading release posts...</p>
+            <div className="flex flex-col items-center justify-center h-[300px] w-full">
+                <RefreshCw className={`animate-spin h-10 w-10 mb-2 ${textClass}`} />
             </div>
           ) : releasePosts.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[300px] space-y-4">
-              <Newspaper className="w-16 h-16 text-muted-foreground" />
+              <Newspaper className={`w-16 h-16 ${textClass}`} />
               <div className="text-center space-y-2">
-                <p className="text-lg font-medium">Release Posts Coming Soon</p>
-                <p className="text-muted-foreground">
+                <p className={`text-lg font-medium ${textClass}`}>Release Posts Coming Soon</p>
+                <p className={textClass}>
                   Stay tuned for upcoming updates and releases
                 </p>
               </div>
@@ -104,6 +109,8 @@ const ReleasePostCarousel: React.FC<ReleasePostCarouselProps> = ({
                           onDelete={handleDeletePost}
                           formatDate={formatDate}
                           isAdmin={isAdmin}
+                          cardClass={cardClass}
+                          textClass={textClass}
                         />
                       ))}
                   </div>
@@ -111,7 +118,7 @@ const ReleasePostCarousel: React.FC<ReleasePostCarouselProps> = ({
             </div>
           )}
         </div>
-        
+
         {!loading && releasePosts.length > 0 && (
           <div className="flex justify-center mt-6 space-x-2">
             {Array.from({ length: totalSlides }).map((_, index) => (

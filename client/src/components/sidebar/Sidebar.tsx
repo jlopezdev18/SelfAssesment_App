@@ -6,8 +6,8 @@ import {
   FaFileAlt,
   FaDollarSign,
   FaCog,
-  FaMoon,
-  FaSun,
+  // FaMoon,
+  // FaSun,
   FaSignOutAlt,
   FaChevronLeft,
   FaChevronRight,
@@ -21,7 +21,7 @@ import { useIsAdmin } from "../../hooks/useIsAdmin";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
+// import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { NavItem } from "./NavItem";
 interface SidebarProps {
@@ -38,7 +38,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   sidebarCollapsed,
   setSidebarCollapsed,
   darkMode,
-  setDarkMode,
+  // setDarkMode,
   mutedTextClass,
   textClass,
   sidebarClass,
@@ -185,7 +185,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           />
 
           {/* Dark Mode Toggle */}
-          <div className="pt-4">
+          {/* <div className="pt-4">
             <Separator className="mb-4" />
             <div
               className={`flex items-center ${
@@ -231,7 +231,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 />
               )}
             </div>
-          </div>
+          </div> */}
         </nav>
       </div>
 

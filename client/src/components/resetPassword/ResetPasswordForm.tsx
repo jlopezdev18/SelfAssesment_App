@@ -3,6 +3,8 @@ import { HiOutlineLockClosed, HiEye, HiEyeOff } from "react-icons/hi";
 import { getAuth, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 import Swal from "sweetalert2";
 import axios from "axios";
+import zxcvbn from "zxcvbn";
+const API_URL = import.meta.env.REACT_APP_API_URL || "http://localhost:4000";
 
 type PasswordInputProps = {
   id: string;
@@ -86,8 +88,14 @@ export default function ResetPasswordForm({ onBack }: ResetPasswordFormProps) {
 
     if (!newPassword) {
       newErrors.newPassword = "New password is required";
-    } else if (newPassword.length < 6) {
-      newErrors.newPassword = "Password must be at least 6 characters";
+    } else if (newPassword.length < 8) {
+      newErrors.newPassword = "Password must be at least 8 characters";
+    } else {
+      const strength = zxcvbn(newPassword);
+      if (strength.score < 3) {
+        newErrors.newPassword =
+          "Password is too weak. Use a mix of uppercase, lowercase, numbers, and symbols.";
+      }
     }
 
     if (!confirmPassword) {
@@ -125,7 +133,7 @@ export default function ResetPasswordForm({ onBack }: ResetPasswordFormProps) {
 
       // Remove firstTimeLogin claim by calling backend
       const idToken = await user.getIdToken();
-      await axios.post("http://localhost:4000/api/remove-first-time-flag", {}, {
+      await axios.post(`${API_URL}/api/remove-first-time-flag`, {}, {
         headers: {
           Authorization: `Bearer ${idToken}`,
         },
@@ -150,6 +158,8 @@ export default function ResetPasswordForm({ onBack }: ResetPasswordFormProps) {
       setIsLoading(false);
     }
   };
+
+  const passwordStrength = zxcvbn(newPassword);
 
   return (
     <div
@@ -198,6 +208,30 @@ export default function ResetPasswordForm({ onBack }: ResetPasswordFormProps) {
               toggleShow={() => setShowNewPassword(!showNewPassword)}
               error={errors.newPassword}
             />
+
+            {/* Password strength bar and feedback */}
+            {newPassword && (
+              <div className="mt-2">
+                <div className="h-2 w-full bg-gray-200 rounded">
+                  <div
+                    className={`h-2 rounded transition-all`}
+                    style={{
+                      width: `${(passwordStrength.score + 1) * 20}%`,
+                      background:
+                        passwordStrength.score < 2
+                          ? "#f87171"
+                          : passwordStrength.score < 3
+                          ? "#fbbf24"
+                          : "#34d399",
+                    }}
+                  />
+                </div>
+                <p className="text-xs mt-1 text-gray-500">
+                  {passwordStrength.feedback.suggestions[0] ||
+                    ["Weak", "Fair", "Good", "Strong", "Very strong"][passwordStrength.score]}
+                </p>
+              </div>
+            )}
 
             <PasswordInput
               id="confirmPassword"
