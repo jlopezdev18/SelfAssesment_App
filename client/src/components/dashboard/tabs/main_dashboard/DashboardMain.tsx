@@ -1,34 +1,35 @@
 import React, { useState } from "react";
-import {
-  FaUsers,
-  FaDollarSign,
-  FaBoxOpen,
-  FaUndo,
-} from "react-icons/fa";
-import { MdOutlinePostAdd } from "react-icons/md";
+import { FaUsers } from "react-icons/fa";
 import ReleasePostModal from "./ReleasePostModal";
 import ReleasePostCarousel from "./ReleasePostCarousel";
-import type { DashboardMainProps, ReleasePost } from "./types/DashboardMainInterfaces";
+import type {
+  DashboardMainProps,
+  ReleasePost,
+} from "./types/DashboardMainInterfaces";
 import AddReleasePostModal from "./AddReleasePostModal";
 import { useDashboardMain } from "./hooks/useDashboardMain";
 import { useIsAdmin } from "../../../../hooks/useIsAdmin";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Plus } from "lucide-react";
 
 const DashboardMain: React.FC<DashboardMainProps> = ({
   darkMode,
   cardClass,
   textClass,
-  mutedTextClass,
 }) => {
   const [selectedPost, setSelectedPost] = useState<ReleasePost | null>(null);
   const [openAddPostModal, setOpenAddPostModal] = useState(false);
-  const { releasePosts, addReleasePost, deleteReleasePost, loading } = useDashboardMain(3);
+  const { releasePosts, addReleasePost, deleteReleasePost, loading } =
+    useDashboardMain(3);
 
   const formatDate = (dateObj: { _seconds: number; _nanoseconds: number }) =>
-  new Date(dateObj._seconds * 1000).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+    new Date(dateObj._seconds * 1000).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   const isAdmin = useIsAdmin();
   const openPost = (post: ReleasePost) => {
     setSelectedPost(post);
@@ -52,20 +53,43 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
   };
 
   const renderFullContent = (content: string) => {
-    const lines = content.split('\n');
+    const lines = content.split("\n");
     return lines.map((line, index) => {
-      if (line.startsWith('## ')) {
-        return <h2 key={index} className="text-xl font-bold text-gray-900 mt-6 mb-3">{line.replace('## ', '')}</h2>;
-      } else if (line.startsWith('**') && line.endsWith('**')) {
-        return <h3 key={index} className="text-lg font-semibold text-gray-800 mt-4 mb-2">{line.replace(/\*\*/g, '')}</h3>;
+      if (line.startsWith("## ")) {
+        return (
+          <h2 key={index} className="text-xl font-bold text-gray-900 mt-6 mb-3">
+            {line.replace("## ", "")}
+          </h2>
+        );
+      } else if (line.startsWith("**") && line.endsWith("**")) {
+        return (
+          <h3
+            key={index}
+            className="text-lg font-semibold text-gray-800 mt-4 mb-2"
+          >
+            {line.replace(/\*\*/g, "")}
+          </h3>
+        );
       } else if (line.match(/^\d+\./)) {
-        return <p key={index} className="text-gray-600 mb-2 ml-4 font-medium">{line}</p>;
-      } else if (line.startsWith('- ')) {
-        return <li key={index} className="text-gray-600 mb-1 ml-4">{line.replace('- ', '')}</li>;
-      } else if (line.trim() === '') {
+        return (
+          <p key={index} className="text-gray-600 mb-2 ml-4 font-medium">
+            {line}
+          </p>
+        );
+      } else if (line.startsWith("- ")) {
+        return (
+          <li key={index} className="text-gray-600 mb-1 ml-4">
+            {line.replace("- ", "")}
+          </li>
+        );
+      } else if (line.trim() === "") {
         return <br key={index} />;
       } else {
-        return <p key={index} className="text-gray-600 mb-3 leading-relaxed">{line}</p>;
+        return (
+          <p key={index} className="text-gray-600 mb-3 leading-relaxed">
+            {line}
+          </p>
+        );
       }
     });
   };
@@ -80,17 +104,13 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
           </h1>
         </div>
         {isAdmin && (
-        <button
-          className="text-white px-6 py-3 rounded-lg text-sm font-medium transition-all hover:shadow-lg transform hover:scale-105"
-          style={{
-            background:
-              "linear-gradient(90deg, rgba(32, 174, 248, 1) 0%, rgba(10, 148, 255, 1) 54%, rgba(143, 207, 255, 1) 100%)",
-          }}
-          onClick={() => setOpenAddPostModal(true)}
-        >
-          <MdOutlinePostAdd className="inline mr-2 w-5 h-5" />
-          Add Release Post
-        </button>
+          <Button
+            onClick={() => setOpenAddPostModal(true)}
+            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Release Post
+          </Button>
         )}
       </div>
       {/* Add Release Post Modal */}
@@ -101,70 +121,78 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
       />
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div
-          className={`${cardClass} p-6 rounded-xl shadow-sm border border-gray-100 ${
-            darkMode ? "border-gray-700" : ""
-          } hover:shadow-lg transition-shadow`}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-2">
-              <FaUsers className="w-4 h-4 text-blue-500" />
-              <span className={`text-sm ${mutedTextClass}`}>Total customers</span>
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <FaUsers className="w-4 h-4 text-blue-500" />
+                <span className="text-sm text-muted-foreground">
+                  Total customers
+                </span>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className={`text-2xl font-bold ${textClass}`}>567,899</span>
-            <span className="text-sm text-green-500 font-medium">📈 2.6%</span>
-          </div>
-        </div>
-        <div
-          className={`${cardClass} p-6 rounded-xl shadow-sm border border-gray-100 ${
-            darkMode ? "border-gray-700" : ""
-          } hover:shadow-lg transition-shadow`}
-        >
-          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2">
-              <FaDollarSign className="w-4 h-4 text-green-500" />
-              <span className={`text-sm ${mutedTextClass}`}>Total revenue</span>
+              <span className="text-2xl font-bold">567,899</span>
+              <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                📈 2.6%
+              </Badge>
             </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className={`text-2xl font-bold ${textClass}`}>$3,465 M</span>
-            <span className="text-sm text-green-500 font-medium">📈 0.6%</span>
-          </div>
-        </div>
-        <div
-          className={`${cardClass} p-6 rounded-xl shadow-sm border border-gray-100 ${
-            darkMode ? "border-gray-700" : ""
-          } hover:shadow-lg transition-shadow`}
-        >
-          <div className="flex items-center justify-between mb-4">
+          </CardContent>
+        </Card>
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <FaUsers className="w-4 h-4 text-blue-500" />
+                <span className="text-sm text-muted-foreground">
+                  Total customers
+                </span>
+              </div>
+            </div>
             <div className="flex items-center space-x-2">
-              <FaBoxOpen className="w-4 h-4 text-purple-500" />
-              <span className={`text-sm ${mutedTextClass}`}>Total orders</span>
+              <span className="text-2xl font-bold">567,899</span>
+              <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                📈 2.6%
+              </Badge>
             </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className={`text-2xl font-bold ${textClass}`}>1,136 M</span>
-            <span className="text-sm text-red-500 font-medium">📉 0.2%</span>
-          </div>
-        </div>
-        <div
-          className={`${cardClass} p-6 rounded-xl shadow-sm border border-gray-100 ${
-            darkMode ? "border-gray-700" : ""
-          } hover:shadow-lg transition-shadow`}
-        >
-          <div className="flex items-center justify-between mb-4">
+          </CardContent>
+        </Card>
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <FaUsers className="w-4 h-4 text-blue-500" />
+                <span className="text-sm text-muted-foreground">
+                  Total customers
+                </span>
+              </div>
+            </div>
             <div className="flex items-center space-x-2">
-              <FaUndo className="w-4 h-4 text-orange-500" />
-              <span className={`text-sm ${mutedTextClass}`}>Total returns</span>
+              <span className="text-2xl font-bold">567,899</span>
+              <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                📈 2.6%
+              </Badge>
             </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className={`text-2xl font-bold ${textClass}`}>1,789</span>
-            <span className="text-sm text-green-500 font-medium">📈 0.12%</span>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <FaUsers className="w-4 h-4 text-blue-500" />
+                <span className="text-sm text-muted-foreground">
+                  Total customers
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-2xl font-bold">567,899</span>
+              <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                📈 2.6%
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Release Posts Carousel */}

@@ -13,6 +13,17 @@ import type {
   User,
 } from "./types/ClientsInterfaces";
 import ClipLoader from "react-spinners/ClipLoader";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 // Zod schemas for validation
 const companySchema = z.object({
@@ -359,57 +370,63 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
         </div>
 
         {/* Search and Filter */}
-        <div
-          className={`${cardClass} rounded-lg shadow-sm border border-gray-200 p-4 mb-6`}
-        >
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaSearch className="h-5 w-5 text-gray-400" />
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaSearch className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <Input
+                  type="text"
+                  placeholder="Search companies and users..."
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
-              <input
-                type="text"
-                placeholder="Search companies and users..."
-                className={`w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${textClass} ${cardClass}`}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+              <div className="sm:w-48">
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="sm:w-48">
-              <select
-                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${textClass} ${cardClass}`}
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="pending">Pending</option>
-              </select>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Selection Toolbar */}
         {selectedCompanies.length > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-center justify-between">
-            <span className="text-blue-900 font-medium">
-              {selectedCompanies.length} selected
-            </span>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50 flex items-center gap-1">
-                <FaBell className="w-4 h-4" />
-                Notification
-              </button>
-              <button
-                onClick={handleDeleteSelectedCompany}
-                className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-1"
-              >
-                <FaTrash className="w-4 h-4" />
-                Delete
-              </button>
-            </div>
-          </div>
+          <Card className="mb-6 border-blue-200 bg-blue-50/50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <Badge variant="secondary">
+                  {selectedCompanies.length} selected
+                </Badge>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">
+                    <FaBell className="w-4 h-4 mr-2" />
+                    Notification
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleDeleteSelectedCompany}
+                  >
+                    <FaTrash className="w-4 h-4 mr-2" />
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Table */}
