@@ -1,13 +1,12 @@
 import React from "react";
-import { X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { ReleasePost } from "./types/DashboardMainInterfaces";
+import DOMPurify from 'dompurify';
 
 interface ReleasePostModalProps {
   post: ReleasePost;
@@ -21,8 +20,15 @@ const ReleasePostModal: React.FC<ReleasePostModalProps> = ({
   onClose,
   formatDate,
   renderFullContent,
-}) => (
-  <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+}) =>{
+  const isHtml = /<\/?[a-z][\s\S]*>/i.test(post.fullContent);
+  const safeHtml = isHtml
+    ? DOMPurify.sanitize(post.fullContent, { USE_PROFILES: { html: true } })
+    : "";
+  
+  return (
+  <Dialog open={true}  onOpenChange={(open) => { if (!open) onClose(); }}>
+    {/* Modal Content */}
     <DialogContent className="sm:max-w-4xl max-h-[90vh] p-0 overflow-hidden">
       {/* Modal Header */}
       <div className="relative">
@@ -32,14 +38,6 @@ const ReleasePostModal: React.FC<ReleasePostModalProps> = ({
             alt={post.title} 
             className="w-full h-full object-cover opacity-80" 
           />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 rounded-full text-white hover:text-gray-800 transition-all"
-          >
-            <X className="w-5 h-5" />
-          </Button>
           <div className="absolute bottom-4 left-4 right-4">
             <div className="flex items-center space-x-2 mb-3">
               <Badge className="bg-white/90 text-blue-600 hover:bg-white/90">
@@ -73,12 +71,37 @@ const ReleasePostModal: React.FC<ReleasePostModalProps> = ({
       
       {/* Modal Content */}
       <div className="p-6 max-h-[calc(90vh-16rem)] overflow-y-auto">
-        <div className="prose prose-lg max-w-none dark:prose-invert">
-          {renderFullContent(post.fullContent)}
+          {/* Scoped viewer styles */}
+          <style>
+            {`
+              .rte-view a { color:#2563eb; text-decoration:underline; }
+              .rte-view a:hover { color:#1d4ed8; }
+              .rte-view ul { list-style: disc; padding-left: 1.5rem; }
+              .rte-view ol { list-style: decimal; padding-left: 1.5rem; }
+              .rte-view li { margin: 0.125rem 0; }
+              .rte-view blockquote {
+                border-left: 3px solid #e5e7eb;
+                padding-left: 0.75rem;
+                color: #6b7280;
+                margin: 0.5rem 0;
+              }
+            `}
+          </style>
+
+          {isHtml ? (
+            <div
+              className="rte-view prose prose-lg max-w-none dark:prose-invert"
+              dangerouslySetInnerHTML={{ __html: safeHtml }}
+            />
+          ) : (
+            <div className="prose prose-lg max-w-none dark:prose-invert">
+              {renderFullContent(post.fullContent)}
+            </div>
+          )}
         </div>
-      </div>
     </DialogContent>
   </Dialog>
 );
+}
 
 export default ReleasePostModal;

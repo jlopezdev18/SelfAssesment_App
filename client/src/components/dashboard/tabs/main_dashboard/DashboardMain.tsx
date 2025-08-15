@@ -36,12 +36,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
     document.body.style.overflow = "hidden";
   };
 
-  const closePost = () => {
-    setSelectedPost(null);
-    document.body.style.overflow = "unset";
-  };
-
-  const handleAddPost = (post: ReleasePost) => {
+    const handleAddPost = (post: ReleasePost) => {
     // Here you would typically send the post to your backend
     addReleasePost(post);
     // For now, just close the modal
@@ -53,6 +48,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
   };
 
   const renderFullContent = (content: string) => {
+    
     const lines = content.split("\n");
     return lines.map((line, index) => {
       if (line.startsWith("## ")) {
@@ -212,8 +208,8 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
       {selectedPost && (
         <ReleasePostModal
           post={selectedPost}
-          onClose={closePost}
           formatDate={formatDate}
+          onClose={() => setSelectedPost(null)}
           renderFullContent={renderFullContent}
         />
       )}

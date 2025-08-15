@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import type { ReleasePost } from "./types/DashboardMainInterfaces";
+import TipTapRichTextEditor from "./TipTapRichTextEditor";
 
 interface AddReleasePostModalProps {
   open: boolean;
@@ -27,28 +27,27 @@ const AddReleasePostModal: React.FC<AddReleasePostModalProps> = ({
 }) => {
   const [form, setForm] = useState({
     title: "Latest Update - Release December 2023",
-    description:
-      "Hello Users, We hope this message finds you well! We're thrilled to share some exciting news with you – a brand new version of our application is now available for download!",
-    fullContent: `Latest Update - Release December 2023
-
-Hello Users,
-
-We hope this message finds you well! We're thrilled to share some exciting news with you – a brand new version of our application is now available for download!
-
-Our team has been working hard to enhance your user experience, address any bugs, and introduce exciting new features. To take advantage of these improvements, we encourage you to upgrade to the latest version.
-
-Here's how to get started:
-
-Visit the download page.
-
-We sincerely appreciate your continued support, and we're confident that you'll love the enhancements we've made.
-
-If you have any questions or encounter any issues during the update process, please don't hesitate to reach out.
-
-Thank you for being a valued member of our community!
-
-Best regards,
-The Development Team`,
+     fullContent: `
+      <h2>Latest Update – Release December 2023</h2>
+      <p>Hello Users,</p>
+      <p>We hope this message finds you well! We're thrilled to share some exciting news with you – a brand new version of our application is now available for download!</p>
+      <p>Our team has been working hard to enhance your user experience, address any bugs, and introduce exciting new features. To take advantage of these improvements, we encourage you to upgrade to the latest version.</p>
+      <br/>
+      <h3>How to get started</h3>
+      <ol>
+        <li>Update to the latest version from your app store.</li>
+        <li>
+          Review the version history in our
+          <a href="https://selfassesmentapp.netlify.app/dashboard/versioning" target="_blank" rel="noopener noreferrer"> Dashboard › Versioning</a>.
+        </li>
+        <li>Visit the download page.</li>
+      </ol>
+      <br/>
+      <p>We sincerely appreciate your continued support, and we're confident that you'll love the enhancements we've made.</p>
+      <p>If you have any questions or encounter any issues during the update process, please don't hesitate to reach out.</p>
+      <p>Thank you for being a valued member of our community!</p>
+      <p>Best regards,<br/>The Development Team</p>
+    `,
     version: "v1.2.0",
     tags: "Update, Download, Features, Bug Fixes",
     image: "",
@@ -100,7 +99,7 @@ The Development Team`,
         <DialogHeader>
           <DialogTitle>Add Release Post</DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-2">
             <div className="space-y-2">
@@ -117,13 +116,9 @@ The Development Team`,
 
             <div className="space-y-2">
               <Label htmlFor="fullContent">Full Content</Label>
-              <Textarea
-                id="fullContent"
-                placeholder="Enter the full content of your post"
+              <TipTapRichTextEditor
                 value={form.fullContent}
-                onChange={(e) => handleChange("fullContent", e.target.value)}
-                rows={8}
-                required
+                onChange={(html) => handleChange("fullContent", html)}
               />
             </div>
 
@@ -139,7 +134,7 @@ The Development Team`,
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="tags">Tags</Label>
                 <Input
@@ -206,9 +201,7 @@ The Development Team`,
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">
-              Add Post
-            </Button>
+            <Button type="submit">Add Post</Button>
           </DialogFooter>
         </form>
       </DialogContent>
