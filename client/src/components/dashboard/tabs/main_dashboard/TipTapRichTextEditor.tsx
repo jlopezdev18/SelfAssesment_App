@@ -48,6 +48,18 @@ export default function TipTapRichTextEditor({
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
 
+  // Convert bare URLs in initial/external HTML into anchor tags
+  const linkify = (input: string) => {
+    if (!input) return input;
+    // if already has anchors, keep as is
+    if (/<a\b[^>]*>/i.test(input)) return input;
+    const urlRE = /(https?:\/\/[^\s<>"')]+)|(www\.[^\s<>"')]+)/gi;
+    return input.replace(urlRE, (m) => {
+      const href = m.startsWith("http") ? m : `https://${m}`;
+      return `<a href="${href}" target="_blank" rel="noopener noreferrer">${m}</a>`;
+    });
+  };
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -60,13 +72,19 @@ export default function TipTapRichTextEditor({
       OrderedList,
       ListItem,
       Underline,
-      Link.configure({ openOnClick: false, autolink: true }),
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        linkOnPaste: true,
+        defaultProtocol: "https",
+        HTMLAttributes: { target: "_blank", rel: "noopener noreferrer" },
+      }),
       Placeholder.configure({
         placeholder: placeholder || "Write something...",
       }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
     ],
-    content: value || "",
+    content: linkify(value || ""),
     editorProps: {
       attributes: {
         class:
@@ -80,7 +98,7 @@ export default function TipTapRichTextEditor({
     if (!editor) return;
     const html = editor.getHTML();
     if (typeof value === "string" && value !== html) {
-      editor.commands.setContent(value);
+      editor.commands.setContent(linkify(value));
     }
   }, [value, editor]);
 
@@ -117,7 +135,6 @@ export default function TipTapRichTextEditor({
       return;
     }
 
-    // If no selection, insert the URL as linked text
     if (editor.state.selection.empty && !editor.isActive("link")) {
       chain
         .insertContent({
@@ -148,13 +165,20 @@ export default function TipTapRichTextEditor({
     >
       <style>
         {`
+          /* Reset inherited colors (e.g., from .prose or text-primary) */
+          .tiptap-editor { color:#1f2937 !important; } /* gray-800 */
+          .tiptap-editor :where(p, li, blockquote) { color:inherit !important; }
+          .tiptap-editor :where(h1,h2,h3,h4,h5,h6) { color:#111827 !important; } /* gray-900 */
+
+          /* Links and elements */
+          .tiptap-editor a, .tiptap-editor a:visited { color:#2563eb; text-decoration:underline; }
           .tiptap-editor ul { list-style: disc; padding-left: 1.5rem; }
           .tiptap-editor ol { list-style: decimal; padding-left: 1.5rem; }
           .tiptap-editor li { margin: 0.125rem 0; }
           .tiptap-editor blockquote {
             border-left: 3px solid #e5e7eb;
             padding-left: 0.75rem;
-            color: #6b7280;
+            color: #6b7280 !important; /* gray-500 for quotes */
             margin: 0.5rem 0;
           }
         `}

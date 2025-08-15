@@ -28,7 +28,6 @@ const AddReleasePostModal: React.FC<AddReleasePostModalProps> = ({
   const [form, setForm] = useState({
     title: "Latest Update - Release December 2023",
      fullContent: `
-      <h2>Latest Update – Release December 2023</h2>
       <p>Hello Users,</p>
       <p>We hope this message finds you well! We're thrilled to share some exciting news with you – a brand new version of our application is now available for download!</p>
       <p>Our team has been working hard to enhance your user experience, address any bugs, and introduce exciting new features. To take advantage of these improvements, we encourage you to upgrade to the latest version.</p>
