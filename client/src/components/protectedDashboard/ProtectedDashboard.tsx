@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { onAuthStateChanged, onIdTokenChanged } from "firebase/auth";
-import Swal from "sweetalert2";
 import { auth } from "../../firebase/config";
 import Dashboard from "../dashboard/Dashboard";
 import Login from "../login/Login";
@@ -17,12 +16,7 @@ const ProtectedDashboard: React.FC = () => {
     async function checkUser(user: import("firebase/auth").User | null) {
       if (!user) {
         setAllowed(false);
-        setShowResetForm(false);
-        Swal.fire(
-          "Acceso denegado",
-          "Debes iniciar sesión para acceder al dashboard.",
-          "error"
-        );
+        setShowResetForm(false)
         return;
       }
       const idTokenResult = await user.getIdTokenResult();
