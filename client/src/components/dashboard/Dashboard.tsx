@@ -49,10 +49,7 @@ const Dashboard: React.FC = () => {
         />
         <div className="flex-1 overflow-auto">
           <Routes>
-            <Route 
-              path="/" 
-              element={<Navigate to="/dashboard/main" replace />} 
-            />
+            <Route index element={<Navigate to="dashboard/main" replace />} />
             <Route 
               path="/main" 
               element={

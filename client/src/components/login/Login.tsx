@@ -7,12 +7,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import Logo from "/assets/Logo.svg";
 import { loginWithEmail } from "../../firebase/auth";
 import { getAuth } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 
 export default function Login({ onShowResetForm }: { onShowResetForm: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const onSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
@@ -32,7 +34,7 @@ export default function Login({ onShowResetForm }: { onShowResetForm: () => void
           return;
         }
       }
-
+     navigate("/dashboard/main", { replace: true });
       // Continue with normal login flow (redirect, etc.)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {

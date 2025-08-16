@@ -24,6 +24,7 @@ import { Separator } from "@/components/ui/separator";
 // import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { NavItem } from "./NavItem";
+import { useNavigate } from "react-router";
 interface SidebarProps {
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (collapsed: boolean) => void;
@@ -45,10 +46,11 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const isAdmin = useIsAdmin();
   const [user] = useAuthState(auth);
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     await signOut(auth);
-    window.location.reload();
+    navigate("/", { replace: true });
   };
 
   const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
