@@ -299,34 +299,72 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
 
   // --- EDIT VERSION ---
   const handleEditVersionSubmit = async (): Promise<void> => {
-    const filesToUpdate = [];
-    if (formData.files.installer.filename && formData.files.installer.size) {
-      filesToUpdate.push({
-        ...formData.files.installer,
-        id:
-          files.find((f) => f.type === "installer")?.id ||
-          Date.now().toString(),
-      });
-    }
-    if (formData.files.update.filename && formData.files.update.size) {
-      filesToUpdate.push({
-        ...formData.files.update,
-        id:
-          files.find((f) => f.type === "update")?.id ||
-          (Date.now() + 1).toString(),
-      });
+   if (!formData.version || !formData.releaseType || !formData.description) {
+      Swal.fire("Por favor completa todos los campos de la versión", "", "warning");
+      return;
     }
 
-    const dataToSubmit = {
-      version: formData.version,
-      releaseDate: formData.releaseDate,
-      releaseType: formData.releaseType,
-      description: formData.description,
-      files: filesToUpdate,
-    };
-    await updateVersion(versionData?.id, dataToSubmit);
-    setShowEditForm(false);
-    Swal.fire("Version updated!", "", "success");
+    try {
+      // Mantener URLs actuales por defecto
+      let installerDownloadUrl = formData.files.installer.downloadUrl;
+      let updateDownloadUrl = formData.files.update.downloadUrl;
+
+      // Subir nuevos archivos si el usuario seleccionó alguno
+      if (selectedInstallerFile) {
+        const installerRef = ref(
+          storage,
+          `downloads/installers/${selectedInstallerFile.name}`
+        );
+        await uploadBytes(installerRef, selectedInstallerFile);
+        installerDownloadUrl = await getDownloadURL(installerRef);
+      }
+
+      if (selectedUpdateFile) {
+        const updateRef = ref(
+          storage,
+          `downloads/updates/${selectedUpdateFile.name}`
+        );
+        await uploadBytes(updateRef, selectedUpdateFile);
+        updateDownloadUrl = await getDownloadURL(updateRef);
+      }
+
+      // Construir payload igual que en "Add" pero preservando los IDs existentes
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const filesToUpdate: any[] = [];
+      if (formData.files.installer.filename && formData.files.installer.size) {
+        filesToUpdate.push({
+          ...formData.files.installer,
+          id: files.find((f) => f.type === "installer")?.id || Date.now().toString(),
+          downloadUrl: installerDownloadUrl,
+        });
+      }
+      if (formData.files.update.filename && formData.files.update.size) {
+        filesToUpdate.push({
+          ...formData.files.update,
+          id: files.find((f) => f.type === "update")?.id || (Date.now() + 1).toString(),
+          downloadUrl: updateDownloadUrl,
+        });
+      }
+
+      const dataToSubmit = {
+        version: formData.version,
+        releaseDate: formData.releaseDate,
+        releaseType: formData.releaseType,
+        description: formData.description,
+        files: filesToUpdate,
+      };
+
+      await updateVersion(versionData?.id, dataToSubmit);
+
+      // Limpiar estado de selección de archivos y cerrar el formulario
+      setSelectedInstallerFile(null);
+      setSelectedUpdateFile(null);
+      setShowEditForm(false);
+
+      Swal.fire("Versión actualizada", "", "success");
+    } catch {
+      Swal.fire("Error al actualizar la versión", "Intenta de nuevo.", "error");
+    }
   };
 
   // --- FILE CARD ---
