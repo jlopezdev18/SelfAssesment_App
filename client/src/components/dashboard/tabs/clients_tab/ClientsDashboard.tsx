@@ -12,7 +12,7 @@ import type {
   NewUserForm,
   User,
 } from "./types/ClientsInterfaces";
-import ClipLoader from "react-spinners/ClipLoader";
+import ScaleLoader from "react-spinners/ScaleLoader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -432,7 +432,7 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
         {/* Table */}
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <ClipLoader color={darkMode ? "#fff" : "#2563eb"} size={48} />
+            <ScaleLoader color={darkMode ? "#fff" : "#2563eb"} />
           </div>
         ) : (
           <>

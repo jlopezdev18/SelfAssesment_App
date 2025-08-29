@@ -3,13 +3,13 @@ import {
   ChevronLeft,
   ChevronRight,
   Newspaper,
-  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import ReleasePostCard from "./ReleasePostCard";
 import type { ReleasePost } from "./types/DashboardMainInterfaces";
 import { useDashboardMain } from "./hooks/useDashboardMain";
+import ScaleLoader from "react-spinners/ScaleLoader";
 
 interface ReleasePostCarouselProps {
   releasePosts?: ReleasePost[];
@@ -38,7 +38,6 @@ const ReleasePostCarousel: React.FC<ReleasePostCarouselProps> = ({
 }) => {
   const { currentSlide, setCurrentSlide, nextSlide, prevSlide, totalSlides } =
     useDashboardMain(postsPerSlide);
- console.log(textClass,darkMode);
   return (
     <Card className={`hover:shadow-lg transition-shadow ${darkMode ? "bg-gray-800 text-white" : "bg-white"}`}>
       <CardHeader>
@@ -73,7 +72,7 @@ const ReleasePostCarousel: React.FC<ReleasePostCarouselProps> = ({
         <div className="overflow-hidden min-h-[300px]">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-[300px] w-full">
-                <RefreshCw className={`animate-spin h-10 w-10 mb-2 ${textClass}`} />
+                <ScaleLoader color={darkMode ? "#fff" : "#2563eb"} />
             </div>
           ) : releasePosts.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[300px] space-y-4">

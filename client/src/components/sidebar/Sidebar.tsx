@@ -39,7 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   sidebarCollapsed,
   setSidebarCollapsed,
   darkMode,
-  // setDarkMode,
+  //setDarkMode,
   mutedTextClass,
   textClass,
   sidebarClass,
@@ -47,6 +47,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const isAdmin = useIsAdmin();
   const [user] = useAuthState(auth);
   const navigate = useNavigate();
+
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -63,7 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div
-      className={`${
+      className={`${ 
         sidebarCollapsed ? "w-16" : "w-64"
       } ${sidebarClass} border-r transition-all duration-300 flex flex-col relative`}
     >
@@ -81,13 +82,13 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
       </Button>
 
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-3">
         {/* Header with logo */}
-        <div className="flex items-center justify-center mb-8">
+        <div className={`mb-8 mt-8 ${sidebarCollapsed ? "w-10" : "w-16"} justify-self-center`}>
           <img
             src={Logo}
             alt="Self Assessment Logo"
-            className="w-12 h-12"
+            className={`${sidebarCollapsed ? "w-12 h-12" : "w-16 h-16"}`}
           />
         </div>
 
@@ -248,7 +249,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   variant="ghost"
                   size="icon"
                   onClick={handleLogout}
-                  className="w-full h-10"
+                  className="w-full h-10 cursor-pointer text-red-500 hover:text-red-500"
                 >
                   <FaSignOutAlt className="w-5 h-5" />
                 </Button>
@@ -262,7 +263,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <Button
             variant="ghost"
             onClick={handleLogout}
-            className="w-full justify-start h-10"
+            className="w-full justify-start h-10 text-red-500 cursor-pointer hover:text-red-500"
           >
             <FaSignOutAlt className="w-5 h-5 mr-3" />
             Log out

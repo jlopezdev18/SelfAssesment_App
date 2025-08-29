@@ -7,7 +7,7 @@ import type {
 } from "../types/ClientsInterfaces";
 import axios from "axios";
 import Swal from "sweetalert2";
-const API_URL = import.meta.env.REACT_APP_API_URL || "http://localhost:4000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 export function useCompanies(initialCompanies: Company[]) {
   const [companies, setCompanies] = useState<Company[]>(initialCompanies);
@@ -78,6 +78,8 @@ export function useCompanies(initialCompanies: Company[]) {
         icon: "error",
         title: "Error",
         text: "Error creating company in database.",
+        timer: 2000,
+        showConfirmButton: false,
       });
     } finally {
       setLoading(false);
@@ -118,6 +120,8 @@ export function useCompanies(initialCompanies: Company[]) {
         icon: "error",
         title: "Error",
         text: "Error adding user to company.",
+        timer: 2000,
+        showConfirmButton: false,
       });
     } finally {
       setLoading(false);
@@ -178,6 +182,8 @@ export function useCompanies(initialCompanies: Company[]) {
       icon: "error",
       title: "Error",
       text: "Error updating user.",
+      timer: 2000,
+      showConfirmButton: false,
     });
   } finally {
     setLoading(false);
@@ -233,6 +239,8 @@ const deleteUser = async (userId: string, companyId: string) => {
       icon: "error",
       title: "Error",
       text: "Error deleting user.",
+      timer: 2000,
+      showConfirmButton: false,
     });
   } finally {
     setLoading(false);
@@ -288,6 +296,8 @@ const deleteUser = async (userId: string, companyId: string) => {
         icon: "error",
         title: "Error",
         text: "Error deleting company.",
+        timer: 2000,
+        showConfirmButton: false,
       });
   } finally {
     setLoading(false);

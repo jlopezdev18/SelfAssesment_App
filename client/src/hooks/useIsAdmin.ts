@@ -1,20 +1,76 @@
 import { useEffect, useState } from "react";
-import { getAuth } from "firebase/auth";
+import { getAuth, onIdTokenChanged, type User } from "firebase/auth";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 export function useIsAdmin() {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchRole = async () => {
-      const authInstance = getAuth();
-      const user = authInstance.currentUser;
-      if (user) {
-        const token = await user.getIdTokenResult();
-        setIsAdmin(token.claims.role === "admin");
+    const auth = getAuth();
+
+    const resolveIsAdmin = async (user: User) => {
+      try {
+        // Fuerza refresh para traer claims actuales después de hard refresh/clear cache
+        const idTokenResult = await user.getIdTokenResult(true);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const claims: any = idTokenResult.claims;
+
+        const adminClaim =
+          claims?.admin === true ||
+          claims?.role === "admin" ||
+          (Array.isArray(claims?.roles) && claims.roles.includes("admin"));
+
+        if (adminClaim) {
+          setIsAdmin(true);
+          setLoading(false);
+          return;
+        }
+
+        // Fallback robusto: verificar en el servidor (si tienes /api/me implementado)
+        try {
+          const idToken = await user.getIdToken();
+          const res = await fetch(`${API_URL}/api/me`, {
+            headers: { Authorization: `Bearer ${idToken}` },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setIsAdmin(Boolean(data?.isAdmin));
+          } else {
+            setIsAdmin(false);
+          }
+        } catch {
+          setIsAdmin(false);
+        } finally {
+          setLoading(false);
+        }
+      } catch {
+        setIsAdmin(false);
+        setLoading(false);
       }
     };
-    fetchRole();
+
+    const unsubscribe = onIdTokenChanged(auth, (user) => {
+      if (!user) {
+        setIsAdmin(false);
+        setLoading(false);
+        return;
+      }
+      resolveIsAdmin(user);
+    });
+
+    // Mantener token fresco en sesiones largas (cada ~55 min)
+    const interval = setInterval(async () => {
+      const u = auth.currentUser;
+      if (u) await u.getIdToken(true);
+    }, 55 * 60 * 1000);
+
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+    };
   }, []);
 
-  return isAdmin;
+  return { isAdmin, loading };
 }

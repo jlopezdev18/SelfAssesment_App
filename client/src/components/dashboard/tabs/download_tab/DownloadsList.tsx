@@ -9,7 +9,7 @@ import type {
   DownloadItem,
   DownloadsListProps,
 } from "./types/DownloadInterfaces";
-import ClipLoader from "react-spinners/ClipLoader";
+import ScaleLoader from "react-spinners/ScaleLoader";
 import HashesModal from "./HashesModal";
 
 interface ExtendedDownloadsListProps extends DownloadsListProps {
@@ -51,7 +51,7 @@ const DownloadsList: React.FC<ExtendedDownloadsListProps> = ({
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <ClipLoader color={darkMode ? "#fff" : "#000"} size={40} />
+        <ScaleLoader color={darkMode ? "#fff" : "#2563eb"} />
         <p className={`mt-4 ${textClass}`}>Loading downloads...</p>
       </div>
     );

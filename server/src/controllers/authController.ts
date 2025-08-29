@@ -70,3 +70,29 @@ export const setUserRole = async (req: Request, res: Response): Promise<any> => 
     return res.status(500).json({ error: errorMessage });
   }
 };
+
+export const me = async (req: Request, res: Response): Promise<any> => {
+  const idToken = req.headers.authorization?.split('Bearer ')[1];
+  if (!idToken) return res.status(401).json({ error: 'Authorization token missing' });
+
+  try {
+    const decoded = await admin.auth().verifyIdToken(idToken);
+    const userRecord = await admin.auth().getUser(decoded.uid);
+    const claims = userRecord.customClaims || {};
+
+    const isAdmin =
+      claims.admin === true ||
+      claims.role === 'admin' ||
+      (Array.isArray((claims as any).roles) && (claims as any).roles.includes('admin'));
+
+    return res.status(200).json({
+      uid: decoded.uid,
+      email: decoded.email,
+      isAdmin,
+      role: claims.role || (isAdmin ? 'admin' : 'user'),
+      claims,
+    });
+  } catch (err: any) {
+    return res.status(401).json({ error: err.message || 'Invalid token' });
+  }
+};

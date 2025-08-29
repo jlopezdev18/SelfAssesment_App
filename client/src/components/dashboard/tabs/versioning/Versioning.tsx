@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import ClipLoader from "react-spinners/ClipLoader";
+import ScaleLoader from "react-spinners/ScaleLoader";
 import {
   FaShieldAlt,
   FaTag,
@@ -479,7 +479,7 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
   if (loading) {
     return (
       <div className="flex justify-center items-center h-full">
-        <ClipLoader color={darkMode ? "#fff" : "#2563eb"} size={64} />
+        <ScaleLoader color={darkMode ? "#fff" : "#2563eb"}  />
       </div>
     );
   }
