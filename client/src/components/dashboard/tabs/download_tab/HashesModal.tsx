@@ -21,7 +21,7 @@ const HashesModal: React.FC<HashesModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xs bg-opacity-50">
       <div className={`relative w-full max-w-md p-6 rounded-lg shadow-xl ${
         darkMode ? 'bg-gray-800' : 'bg-white'
       }`}>
