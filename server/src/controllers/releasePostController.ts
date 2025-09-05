@@ -56,12 +56,10 @@ export const addReleasePost = async (
       sendReleaseEmailToAllUsers(email, title, fullContent, version, tags);
     });
 
-    res
-      .status(201)
-      .json({
-        id: postRef.id,
-        message: "Release post added and sent to users.",
-      });
+    res.status(201).json({
+      id: postRef.id,
+      message: "Release post added and sent to users.",
+    });
   } catch (error) {
     console.error("Error adding release post:", error);
     res.status(500).json({ error: "Failed to add release post." });

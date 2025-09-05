@@ -75,7 +75,7 @@ export const createCompany = async (
         lastName,
         email,
         uid: user.uid,
-        active: true
+        active: true,
       },
     };
 
