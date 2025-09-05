@@ -1,1 +1,4 @@
+# Serve static assets directly
+/assets/* /assets/:splat 200
+# Catch-all for React Router (exclude static assets)
 /* /index.html 200
