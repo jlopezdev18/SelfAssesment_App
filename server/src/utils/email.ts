@@ -30,14 +30,14 @@ const getEmailTemplate = (content: string) => `
                 <table role="presentation" style="width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden;">
                     <!-- Header -->
                     <tr>
-                        <td style="background: linear-gradient(90deg, rgba(32, 174, 248, 1) 0%, rgba(10, 148, 255, 1) 54%, rgba(143, 207, 255, 1) 100%); padding: 40px 20px; text-align: center;">
+                        <td style="background: rgba(32, 174, 248, 1); padding: 50px 30px; text-align: center;">
                             <!-- Logo using CID attachment -->
-                            <div style="text-align: center; margin-bottom: 20px;">
+                            <div style="text-align: center; margin-bottom: 30px; padding: 20px;">
                                 <img src="cid:logo" 
                                      alt="Self Assessment Logo" 
-                                     style="width: 80px; height: 80px; border-radius: 50%; display: block; margin: 0 auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border: 3px solid white;" 
-                                     width="80" 
-                                     height="80" />
+                                     style="width: 120px; height: 120px; border-radius: 50%; display: block; margin: 0 auto; box-shadow: 0 6px 20px rgba(0,0,0,0.3); border: 4px solid white;" 
+                                     width="120" 
+                                     height="120" />
                             </div>
                             <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">Self Assessment</h1>
                             <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0; font-size: 16px;">Professional Assessment Platform</p>
@@ -107,7 +107,7 @@ export async function sendEmailToUser(email: string, password: string) {
 
     <div style="text-align: center; margin: 30px 0;">
       <a href="https://selfassesmentapp.netlify.app/" 
-         style="display: inline-block; background: linear-gradient(90deg, rgba(32, 174, 248, 1) 0%, rgba(10, 148, 255, 1) 54%, rgba(143, 207, 255, 1) 100%); color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(32, 174, 248, 0.4);">
+         style="display: inline-block; background: rgba(32, 174, 248, 1); color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(32, 174, 248, 0.4);">
         🚀 Access Your Account
       </a>
     </div>
@@ -184,7 +184,7 @@ export async function sendReleaseEmailToAllUsers(
 
     <div style="text-align: center; margin: 30px 0;">
       <a href="https://selfassesmentapp.netlify.app/" 
-         style="display: inline-block; background: linear-gradient(90deg, rgba(32, 174, 248, 1) 0%, rgba(10, 148, 255, 1) 54%, rgba(143, 207, 255, 1) 100%); color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(32, 174, 248, 0.4);">
+         style="display: inline-block; background: rgba(32, 174, 248, 1); color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(32, 174, 248, 0.4);">
         🌟 Explore New Features
       </a>
     </div>
@@ -239,8 +239,8 @@ export async function sendEmailToMainUser(email: string, password: string) {
 
     <div style="text-align: center; margin: 30px 0;">
       <a href="https://selfassesmentapp.netlify.app/" 
-         style="display: inline-block; background: linear-gradient(90deg, rgba(32, 174, 248, 1) 0%, rgba(10, 148, 255, 1) 54%, rgba(143, 207, 255, 1) 100%); color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(32, 174, 248, 0.4);">
-        � Access Your Account
+         style="display: inline-block; background: rgba(32, 174, 248, 1); color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(32, 174, 248, 0.4);">
+        🔑 Access Your Account
       </a>
     </div>
 
