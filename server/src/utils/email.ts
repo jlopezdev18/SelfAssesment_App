@@ -30,17 +30,13 @@ const getEmailTemplate = (content: string) => `
                     <!-- Header -->
                     <tr>
                         <td style="background: linear-gradient(90deg, rgba(32, 174, 248, 1) 0%, rgba(10, 148, 255, 1) 54%, rgba(143, 207, 255, 1) 100%); padding: 40px 20px; text-align: center;">
-                            <!-- Your actual logo as embedded SVG -->
-                            <div style="width: 80px; height: 80px; margin: 0 auto 20px; background-color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-                                <svg width="50" height="57" viewBox="0 0 473 537" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M57.6353 95.6048C177.494 95.6048 193.963 29.4736 236.051 33.1476C281.798 30.8514 283.171 89.6346 412.637 95.6048C429.106 95.6048 441 110.301 441 124.996V214.09C435.053 377.581 299.64 509.384 235.136 503.413C177.494 514.435 26.527 368.396 31.1017 211.334V122.241C32.4741 109.382 44.3685 95.6048 57.6353 95.6048Z" fill="#EDF5FF" stroke="#AADCFE" stroke-width="24"/>
-                                    <path d="M41.1112 80.1607C172.111 80.1607 190.111 8.1607 236.111 12.1607C286.111 9.6607 287.611 73.6607 429.111 80.1607C447.111 80.1607 460.111 96.1607 460.111 112.161V209.161C453.611 387.161 305.611 530.661 235.111 524.16C172.111 536.161 7.11119 377.161 12.1112 206.161V109.161C13.6112 95.1607 26.6112 80.1607 41.1112 80.1607Z" stroke="#29B6F6" stroke-width="24"/>
-                                    <mask id="path-3-inside-1_1_15" fill="white">
-                                        <rect x="142" y="174" width="188" height="188" rx="17"/>
-                                    </mask>
-                                    <rect x="142" y="174" width="188" height="188" rx="17" stroke="#AADCFE" stroke-width="44" mask="url(#path-3-inside-1_1_15)"/>
-                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M310.676 184.068C304.971 179.709 296.812 180.8 292.453 186.505L211.494 292.463L174.478 264.18C168.773 259.821 160.615 260.912 156.256 266.617L146.02 280.013C141.661 285.718 142.752 293.877 148.457 298.236L209.199 344.647C214.904 349.006 223.063 347.915 227.422 342.21L326.509 212.526C330.868 206.821 329.777 198.663 324.072 194.304L310.676 184.068Z" fill="#2681FF"/>
-                                </svg>
+                            <!-- Logo using LogoEmail.jpg -->
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                <img src="https://selfassesmentapp.netlify.app/assets/LogoEmail.jpg" 
+                                     alt="Self Assessment Logo" 
+                                     style="width: 80px; height: 80px; border-radius: 50%; display: block; margin: 0 auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border: 3px solid white;" 
+                                     width="80" 
+                                     height="80" />
                             </div>
                             <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">Self Assessment</h1>
                             <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0; font-size: 16px;">Professional Assessment Platform</p>
