@@ -379,7 +379,7 @@ export const deleteCompany = async (
   }
 
   try {
-    // 1. Get company info to identify the main user (owner)
+    // 1. Get company info
     const companyDoc = await admin
       .firestore()
       .collection("companies")
@@ -390,15 +390,13 @@ export const deleteCompany = async (
       return res.status(404).json({ error: "Company not found" });
     }
 
-    const ownerUid = companyDoc.data()?.owner?.uid;
-
     // 2. Logic delete company: set 'deleted' field to true
     await admin.firestore().collection("companies").doc(companyId).update({
       deleted: true,
       deletedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    // 3. Logic delete users: set 'deleted' field to true for users in this company EXCEPT the main user (owner)
+    // 3. Logic delete ALL users in this company (including owner/main user)
     const usersSnapshot = await admin
       .firestore()
       .collection("users")
@@ -409,40 +407,31 @@ export const deleteCompany = async (
     let deletedUsersCount = 0;
 
     usersSnapshot.forEach((doc) => {
-      // Only delete users that are NOT the main user (owner)
-      if (doc.id !== ownerUid) {
-        batch.update(doc.ref, {
-          deleted: true,
-          deletedAt: admin.firestore.FieldValue.serverTimestamp(),
-          status: "inactive",
+      // Delete ALL users in the company (no exceptions)
+      batch.update(doc.ref, {
+        deleted: true,
+        deletedAt: admin.firestore.FieldValue.serverTimestamp(),
+        status: "inactive",
+      });
+
+      // Also disable the user in Firebase Auth
+      admin
+        .auth()
+        .updateUser(doc.id, { disabled: true })
+        .catch((error) => {
+          console.error(`Error disabling user ${doc.id}:`, error);
         });
 
-        // Also disable the user in Firebase Auth
-        admin
-          .auth()
-          .updateUser(doc.id, { disabled: true })
-          .catch((error) => {
-            console.error(`Error disabling user ${doc.id}:`, error);
-          });
-
-        deletedUsersCount++;
-      }
+      deletedUsersCount++;
     });
 
     await batch.commit();
 
-    // 4. Update the main user to remove company association but keep them active
-    if (ownerUid) {
-      await admin.firestore().collection("users").doc(ownerUid).update({
-        companyId: admin.firestore.FieldValue.delete(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-    }
-
     return res.status(200).json({
-      message: "Company deleted and users removed (main user preserved).",
+      message:
+        "Company and all associated users have been deleted successfully.",
       deletedUsersCount,
-      mainUserPreserved: !!ownerUid,
+      allUsersDeleted: true,
     });
   } catch (err: any) {
     console.error("Error deleting company:", err);
@@ -450,54 +439,3 @@ export const deleteCompany = async (
   }
 };
 
-// export const sendNotificationToCompany = async (req: Request, res: Response): Promise<any> => {
-//   const { companyId, title, body } = req.body;
-
-//   if (!companyId || !title || !body) {
-//     return res.status(400).json({ error: "All fields are required" });
-//   }
-
-//   try {
-//     const companyDoc = await admin.firestore().collection("companies").doc(companyId).get();
-//     if (!companyDoc.exists) {
-//       return res.status(404).json({ error: "Company not found" });
-//     }
-
-//     const companyData = companyDoc.data();
-//     if (!companyData || !companyData.users || companyData.users.length === 0) {
-//       return res.status(404).json({ error: "No users found in this company" });
-//     }
-
-//     const tokens = await Promise.all(
-//       companyData.users.map(async (userId: string) => {
-//         const userDoc = await admin.firestore().collection("users").doc(userId).get();
-//         return userDoc.exists ? userDoc.data()?.fcmToken : null;
-//       })
-//     );
-
-//     const validTokens = tokens.filter((token) => token !== null);
-
-//     if (validTokens.length === 0) {
-//       return res.status(404).json({ error: "No valid FCM tokens found for users" });
-//     }
-
-//     const message = {
-//       notification: {
-//         title,
-//         body,
-//       },
-//       tokens: validTokens,
-//     };
-
-//     const response = await admin.messaging().sendMulticast(message);
-
-//     return res.status(200).json({
-//       message: "Notification sent successfully",
-//       successCount: response.successCount,
-//       failureCount: response.failureCount,
-//     });
-//   } catch (err: any) {
-//     console.error("Error sending notification:", err);
-//     return res.status(500).json({ error: err.message });
-//   }
-// }
