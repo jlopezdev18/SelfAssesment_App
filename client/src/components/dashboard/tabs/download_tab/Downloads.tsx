@@ -33,7 +33,7 @@ const Downloads: React.FC<DownloadsProps> = ({
     ],
   });
 
-  const isAdmin = useIsAdmin();
+  const { isAdmin } = useIsAdmin();
   const {
     downloads,
     uploading,

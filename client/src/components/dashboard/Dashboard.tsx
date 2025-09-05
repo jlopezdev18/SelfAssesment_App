@@ -10,7 +10,7 @@ const Dashboard: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  const isAdmin = useIsAdmin();
+  const { isAdmin } = useIsAdmin();
 
   const getTypeIcon = (type: string) => {
     switch (type) {

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FaUsers } from "react-icons/fa";
+//import { FaUsers } from "react-icons/fa";
 import ReleasePostModal from "./ReleasePostModal";
 import ReleasePostCarousel from "./ReleasePostCarousel";
 import type {
@@ -10,8 +10,8 @@ import AddReleasePostModal from "./AddReleasePostModal";
 import { useDashboardMain } from "./hooks/useDashboardMain";
 import { useIsAdmin } from "../../../../hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+//import { Card, CardContent } from "@/components/ui/card";
+//import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
 
 const DashboardMain: React.FC<DashboardMainProps> = ({
@@ -30,7 +30,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
       day: "numeric",
       year: "numeric",
     });
-  const isAdmin = useIsAdmin();
+  const { isAdmin } = useIsAdmin();
   const openPost = (post: ReleasePost) => {
     setSelectedPost(post);
     document.body.style.overflow = "hidden";
@@ -115,7 +115,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
         onClose={() => setOpenAddPostModal(false)}
         onSubmit={handleAddPost}
       />
-      {/* Stats Cards */}
+      {/* Stats Cards
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card className="hover:shadow-lg transition-shadow">
           <CardContent className="p-6">
@@ -189,7 +189,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
             </div>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
 
       {/* Release Posts Carousel */}
       <ReleasePostCarousel

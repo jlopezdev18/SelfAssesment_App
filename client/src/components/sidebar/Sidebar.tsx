@@ -3,9 +3,9 @@ import React from "react";
 import {
   FaChartBar,
   FaDownload,
-  FaFileAlt,
-  FaDollarSign,
-  FaCog,
+  //FaFileAlt,
+  //FaDollarSign,
+  //FaCog,
   // FaMoon,
   // FaSun,
   FaSignOutAlt,
@@ -159,7 +159,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             </>
           )}
 
-          <SectionHeader title="PAYMENTS" />
+          {/* <SectionHeader title="PAYMENTS" />
 
           <NavItem
             icon={<FaFileAlt className="w-5 h-5 flex-shrink-0" />}
@@ -185,7 +185,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             path="/dashboard/settings"
             sidebarCollapsed={sidebarCollapsed}
             darkMode={darkMode}
-          />
+          /> */}
 
           {/* Dark Mode Toggle */}
           {/* <div className="pt-4">
