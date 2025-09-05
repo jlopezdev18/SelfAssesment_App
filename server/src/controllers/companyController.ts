@@ -379,41 +379,71 @@ export const deleteCompany = async (
   }
 
   try {
-    // 1. Logic delete company: set 'deleted' field to true
-    await admin.firestore().collection("companies").doc(companyId).update({
-      deleted: true,
-      deletedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-
-    // 2. Logic delete users: set 'deleted' field to true for users in this company
-    const usersSnapshot = await admin
-      .firestore()
-      .collection("users")
-      .where("companyId", "==", companyId)
-      .get();
-    const batch = admin.firestore().batch();
-    usersSnapshot.forEach((doc) => {
-      batch.update(doc.ref, {
-        deleted: true,
-        deletedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-    });
-    await batch.commit();
-
+    // 1. Get company info to identify the main user (owner)
     const companyDoc = await admin
       .firestore()
       .collection("companies")
       .doc(companyId)
       .get();
+
+    if (!companyDoc.exists) {
+      return res.status(404).json({ error: "Company not found" });
+    }
+
     const ownerUid = companyDoc.data()?.owner?.uid;
+
+    // 2. Logic delete company: set 'deleted' field to true
+    await admin.firestore().collection("companies").doc(companyId).update({
+      deleted: true,
+      deletedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    // 3. Logic delete users: set 'deleted' field to true for users in this company EXCEPT the main user (owner)
+    const usersSnapshot = await admin
+      .firestore()
+      .collection("users")
+      .where("companyId", "==", companyId)
+      .get();
+
+    const batch = admin.firestore().batch();
+    let deletedUsersCount = 0;
+
+    usersSnapshot.forEach((doc) => {
+      // Only delete users that are NOT the main user (owner)
+      if (doc.id !== ownerUid) {
+        batch.update(doc.ref, {
+          deleted: true,
+          deletedAt: admin.firestore.FieldValue.serverTimestamp(),
+          status: "inactive",
+        });
+
+        // Also disable the user in Firebase Auth
+        admin
+          .auth()
+          .updateUser(doc.id, { disabled: true })
+          .catch((error) => {
+            console.error(`Error disabling user ${doc.id}:`, error);
+          });
+
+        deletedUsersCount++;
+      }
+    });
+
+    await batch.commit();
+
+    // 4. Update the main user to remove company association but keep them active
     if (ownerUid) {
-      await admin.auth().updateUser(ownerUid, {
-        disabled: true,
+      await admin.firestore().collection("users").doc(ownerUid).update({
+        companyId: admin.firestore.FieldValue.delete(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
     }
-    return res
-      .status(200)
-      .json({ message: "Company and related users deleted." });
+
+    return res.status(200).json({
+      message: "Company deleted and users removed (main user preserved).",
+      deletedUsersCount,
+      mainUserPreserved: !!ownerUid,
+    });
   } catch (err: any) {
     console.error("Error deleting company:", err);
     return res.status(500).json({ error: err.message });

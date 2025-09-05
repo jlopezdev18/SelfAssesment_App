@@ -29,12 +29,17 @@ const getEmailTemplate = (content: string) => `
                 <table role="presentation" style="width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden;">
                     <!-- Header -->
                     <tr>
-                        <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center;">
-                            <!-- Logo as embedded SVG for better email compatibility -->
-                            <div style="width: 80px; height: 80px; margin: 0 auto 20px; background-color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                <svg width="50" height="50" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="50" cy="50" r="45" fill="#667eea" stroke="#764ba2" stroke-width="2"/>
-                                    <text x="50" y="60" font-family="Arial, sans-serif" font-size="36" font-weight="bold" text-anchor="middle" fill="white">SA</text>
+                        <td style="background: linear-gradient(90deg, rgba(32, 174, 248, 1) 0%, rgba(10, 148, 255, 1) 54%, rgba(143, 207, 255, 1) 100%); padding: 40px 20px; text-align: center;">
+                            <!-- Your actual logo as embedded SVG -->
+                            <div style="width: 80px; height: 80px; margin: 0 auto 20px; background-color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                                <svg width="50" height="57" viewBox="0 0 473 537" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M57.6353 95.6048C177.494 95.6048 193.963 29.4736 236.051 33.1476C281.798 30.8514 283.171 89.6346 412.637 95.6048C429.106 95.6048 441 110.301 441 124.996V214.09C435.053 377.581 299.64 509.384 235.136 503.413C177.494 514.435 26.527 368.396 31.1017 211.334V122.241C32.4741 109.382 44.3685 95.6048 57.6353 95.6048Z" fill="#EDF5FF" stroke="#AADCFE" stroke-width="24"/>
+                                    <path d="M41.1112 80.1607C172.111 80.1607 190.111 8.1607 236.111 12.1607C286.111 9.6607 287.611 73.6607 429.111 80.1607C447.111 80.1607 460.111 96.1607 460.111 112.161V209.161C453.611 387.161 305.611 530.661 235.111 524.16C172.111 536.161 7.11119 377.161 12.1112 206.161V109.161C13.6112 95.1607 26.6112 80.1607 41.1112 80.1607Z" stroke="#29B6F6" stroke-width="24"/>
+                                    <mask id="path-3-inside-1_1_15" fill="white">
+                                        <rect x="142" y="174" width="188" height="188" rx="17"/>
+                                    </mask>
+                                    <rect x="142" y="174" width="188" height="188" rx="17" stroke="#AADCFE" stroke-width="44" mask="url(#path-3-inside-1_1_15)"/>
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M310.676 184.068C304.971 179.709 296.812 180.8 292.453 186.505L211.494 292.463L174.478 264.18C168.773 259.821 160.615 260.912 156.256 266.617L146.02 280.013C141.661 285.718 142.752 293.877 148.457 298.236L209.199 344.647C214.904 349.006 223.063 347.915 227.422 342.21L326.509 212.526C330.868 206.821 329.777 198.663 324.072 194.304L310.676 184.068Z" fill="#2681FF"/>
                                 </svg>
                             </div>
                             <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">Self Assessment</h1>
@@ -57,9 +62,9 @@ const getEmailTemplate = (content: string) => `
                                 This email was sent from an automated system. Please do not reply to this email.
                             </p>
                             <div style="margin-top: 20px;">
-                                <a href="https://selfassesmentapp.netlify.app/" style="color: #667eea; text-decoration: none; font-size: 14px; margin: 0 10px;">Visit Website</a>
+                                <a href="https://selfassesmentapp.netlify.app/" style="color: #20aef8; text-decoration: none; font-size: 14px; margin: 0 10px;">Visit Website</a>
                                 <span style="color: #dee2e6;">|</span>
-                                <a href="#" style="color: #667eea; text-decoration: none; font-size: 14px; margin: 0 10px;">Support</a>
+                                <a href="#" style="color: #20aef8; text-decoration: none; font-size: 14px; margin: 0 10px;">Support</a>
                             </div>
                         </td>
                     </tr>
@@ -88,11 +93,11 @@ export async function sendEmailToUser(email: string, password: string) {
       </p>
     </div>
     
-    <div style="background: linear-gradient(135deg, #f8f9ff 0%, #e3f2fd 100%); border: 2px solid #667eea; border-radius: 12px; padding: 30px; margin: 30px 0; text-align: center;">
+    <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 2px solid #20aef8; border-radius: 12px; padding: 30px; margin: 30px 0; text-align: center;">
       <h3 style="color: #333; margin: 0 0 15px; font-size: 18px;">Your Temporary Access Credentials</h3>
       <p style="color: #666; margin: 0 0 20px; font-size: 14px;">Please use the following temporary password to access your account:</p>
-      <div style="background: white; border: 1px solid #667eea; border-radius: 8px; padding: 20px; margin: 15px 0;">
-        <p style="color: #667eea; font-size: 24px; font-weight: bold; font-family: 'Courier New', monospace; margin: 0; letter-spacing: 2px;">
+      <div style="background: white; border: 1px solid #20aef8; border-radius: 8px; padding: 20px; margin: 15px 0;">
+        <p style="color: #0a94ff; font-size: 24px; font-weight: bold; font-family: 'Courier New', monospace; margin: 0; letter-spacing: 2px;">
           ${password}
         </p>
       </div>
@@ -105,7 +110,7 @@ export async function sendEmailToUser(email: string, password: string) {
 
     <div style="text-align: center; margin: 30px 0;">
       <a href="https://selfassesmentapp.netlify.app/" 
-         style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
+         style="display: inline-block; background: linear-gradient(90deg, rgba(32, 174, 248, 1) 0%, rgba(10, 148, 255, 1) 54%, rgba(143, 207, 255, 1) 100%); color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(32, 174, 248, 0.4);">
         🚀 Access Your Account
       </a>
     </div>
@@ -153,7 +158,7 @@ export async function sendReleaseEmailToAllUsers(
       <p style="color: #666; font-size: 14px; margin: 0;">Version ${version}</p>
     </div>
 
-    <div style="background: #f8f9ff; border: 1px solid #e3f2fd; border-radius: 12px; padding: 30px; margin: 30px 0;">
+    <div style="background: #f0f9ff; border: 1px solid #e0f2fe; border-radius: 12px; padding: 30px; margin: 30px 0;">
       <div style="color: #333; font-size: 15px; line-height: 1.7;">
         ${formattedContent}
       </div>
@@ -163,11 +168,11 @@ export async function sendReleaseEmailToAllUsers(
       <h4 style="color: #333; margin: 0 0 15px; font-size: 16px;">Release Information:</h4>
       <div style="display: flex; flex-direction: column; gap: 10px;">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="color: #667eea; font-weight: 600; min-width: 80px;">Version:</span>
+          <span style="color: #20aef8; font-weight: 600; min-width: 80px;">Version:</span>
           <span style="color: #666; font-family: 'Courier New', monospace;">${version}</span>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="color: #667eea; font-weight: 600; min-width: 80px;">Tags:</span>
+          <span style="color: #20aef8; font-weight: 600; min-width: 80px;">Tags:</span>
           <span style="color: #666;">${tags.join(", ")}</span>
         </div>
       </div>
@@ -175,7 +180,7 @@ export async function sendReleaseEmailToAllUsers(
 
     <div style="text-align: center; margin: 30px 0;">
       <a href="https://selfassesmentapp.netlify.app/" 
-         style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
+         style="display: inline-block; background: linear-gradient(90deg, rgba(32, 174, 248, 1) 0%, rgba(10, 148, 255, 1) 54%, rgba(143, 207, 255, 1) 100%); color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(32, 174, 248, 0.4);">
         🌟 Explore New Features
       </a>
     </div>
@@ -206,11 +211,11 @@ export async function sendEmailToMainUser(email: string, password: string) {
       </p>
     </div>
     
-    <div style="background: linear-gradient(135deg, #f8f9ff 0%, #e3f2fd 100%); border: 2px solid #667eea; border-radius: 12px; padding: 30px; margin: 30px 0; text-align: center;">
+    <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 2px solid #20aef8; border-radius: 12px; padding: 30px; margin: 30px 0; text-align: center;">
       <h3 style="color: #333; margin: 0 0 15px; font-size: 18px;">🔐 Your Account Credentials</h3>
       <p style="color: #666; margin: 0 0 20px; font-size: 14px;">Use these credentials to access your account:</p>
-      <div style="background: white; border: 1px solid #667eea; border-radius: 8px; padding: 20px; margin: 15px 0;">
-        <p style="color: #667eea; font-size: 24px; font-weight: bold; font-family: 'Courier New', monospace; margin: 0; letter-spacing: 2px;">
+      <div style="background: white; border: 1px solid #20aef8; border-radius: 8px; padding: 20px; margin: 15px 0;">
+        <p style="color: #0a94ff; font-size: 24px; font-weight: bold; font-family: 'Courier New', monospace; margin: 0; letter-spacing: 2px;">
           ${password}
         </p>
       </div>
@@ -223,7 +228,7 @@ export async function sendEmailToMainUser(email: string, password: string) {
 
     <div style="text-align: center; margin: 30px 0;">
       <a href="https://selfassesmentapp.netlify.app/" 
-         style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
+         style="display: inline-block; background: linear-gradient(90deg, rgba(32, 174, 248, 1) 0%, rgba(10, 148, 255, 1) 54%, rgba(143, 207, 255, 1) 100%); color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(32, 174, 248, 0.4);">
         � Access Your Account
       </a>
     </div>
