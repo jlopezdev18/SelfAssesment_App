@@ -48,9 +48,14 @@ interface CompanyTableProps {
   getStatusBadge: (status: string) => string;
   formatDate: (date: { _seconds: number; _nanoseconds: number }) => string;
   cardClass: string;
-  textClass: string;
   mutedTextClass: string;
   darkMode: boolean;
+  // Pagination props
+  page: number;
+  rowsPerPage: number;
+  totalCompanies: number;
+  onPageChange: (page: number) => void;
+  onRowsPerPageChange: (rowsPerPage: number) => void;
 }
 
 const CompanyTable: React.FC<CompanyTableProps> = ({
@@ -70,6 +75,12 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
   formatDate,
   cardClass,
   darkMode,
+  // Pagination props
+  page,
+  rowsPerPage,
+  totalCompanies,
+  onPageChange,
+  onRowsPerPageChange,
 }) => {
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -98,7 +109,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
 
   if (!companies || companies.length === 0) {
     return (
-      <div className={`${cardClass} rounded-lg border p-8`}>
+      <div className={`${cardClass} border p-8`}>
         <div className="flex flex-col items-center justify-center space-y-3">
           <FaBuilding className="w-8 h-8 text-muted-foreground" />
           <div className="text-lg font-medium">No Companies Available</div>
@@ -111,7 +122,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
   }
 
   return (
-    <div className={`${cardClass} rounded-lg border overflow-hidden`}>
+    <div className={`${cardClass} border overflow-hidden`}>
       <Table>
         <TableHeader>
           <TableRow
@@ -370,6 +381,73 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
           })}
         </TableBody>
       </Table>
+
+      {/* Integrated Pagination */}
+      <div
+        className={`px-6 py-3 flex items-center justify-between border-t ${
+          darkMode ? "border-gray-700 bg-gray-900" : "border-gray-200 bg-white"
+        }`}
+      >
+        <div
+          className={`flex items-center text-sm ${
+            darkMode ? "text-gray-300" : "text-gray-600"
+          }`}
+        >
+          <span>
+            Showing {page * rowsPerPage + 1} to{" "}
+            {Math.min((page + 1) * rowsPerPage, totalCompanies)} of{" "}
+            {totalCompanies} entries
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            className={`px-3 py-1 border rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              darkMode
+                ? "bg-gray-800 border-gray-600 text-gray-300"
+                : "bg-white border-gray-300 text-gray-700"
+            }`}
+            value={rowsPerPage}
+            onChange={(e) => onRowsPerPageChange(parseInt(e.target.value))}
+          >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+          </select>
+          <div className="flex">
+            <button
+              className={`px-3 py-1 border rounded-l-md text-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                darkMode
+                  ? "border-gray-600 hover:bg-gray-700 bg-gray-800 text-gray-300"
+                  : "border-gray-300 hover:bg-gray-50 bg-white text-gray-700"
+              }`}
+              disabled={page === 0}
+              onClick={() => onPageChange(page - 1)}
+            >
+              Previous
+            </button>
+            <span
+              className={`px-3 py-1 border-t border-b text-sm ${
+                darkMode
+                  ? "border-gray-600 bg-gray-700 text-gray-300"
+                  : "border-gray-300 bg-gray-50 text-gray-700"
+              }`}
+            >
+              {page + 1} of {Math.ceil(totalCompanies / rowsPerPage)}
+            </span>
+            <button
+              className={`px-3 py-1 border rounded-r-md text-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                darkMode
+                  ? "border-gray-600 hover:bg-gray-700 bg-gray-800 text-gray-300"
+                  : "border-gray-300 hover:bg-gray-50 bg-white text-gray-700"
+              }`}
+              disabled={page >= Math.ceil(totalCompanies / rowsPerPage) - 1}
+              onClick={() => onPageChange(page + 1)}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

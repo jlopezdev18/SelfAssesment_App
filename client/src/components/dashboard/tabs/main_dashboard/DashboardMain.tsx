@@ -10,9 +10,18 @@ import AddReleasePostModal from "./AddReleasePostModal";
 import { useDashboardMain } from "./hooks/useDashboardMain";
 import { useIsAdmin } from "../../../../hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
-//import { Card, CardContent } from "@/components/ui/card";
-//import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const DashboardMain: React.FC<DashboardMainProps> = ({
   darkMode,
@@ -21,6 +30,10 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
 }) => {
   const [selectedPost, setSelectedPost] = useState<ReleasePost | null>(null);
   const [openAddPostModal, setOpenAddPostModal] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    postId: string | null;
+  }>({ open: false, postId: null });
   const { releasePosts, addReleasePost, deleteReleasePost, loading } =
     useDashboardMain(3);
 
@@ -36,19 +49,61 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
     document.body.style.overflow = "hidden";
   };
 
-    const handleAddPost = (post: ReleasePost) => {
-    // Here you would typically send the post to your backend
-    addReleasePost(post);
-    // For now, just close the modal
-    setOpenAddPostModal(false);
+  const handleAddPost = (post: ReleasePost) => {
+    addReleasePost(
+      post,
+      () => {
+        setOpenAddPostModal(false);
+      },
+      (error: string) => {
+        toast("Failed to add post", {
+          description: error,
+          style: {
+            background: "#dc2626",
+            color: "white",
+            border: "1px solid #dc2626",
+          },
+          duration: 4000,
+        });
+      }
+    );
   };
 
   const handleDeletePost = (postId: string) => {
-    deleteReleasePost(postId);
+    setDeleteDialog({ open: true, postId });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteDialog.postId) return;
+
+    deleteReleasePost(
+      deleteDialog.postId,
+      () => {
+        toast("🗑️ Post deleted successfully", {
+          style: {
+            background: "#dc2626",
+            color: "white",
+            border: "1px solid #dc2626",
+          },
+          duration: 4000,
+        });
+      },
+      (error: string) => {
+        toast("❌ Failed to delete post", {
+          description: error,
+          style: {
+            background: "#dc2626",
+            color: "white",
+            border: "1px solid #dc2626",
+          },
+          duration: 4000,
+        });
+      }
+    );
+    setDeleteDialog({ open: false, postId: null });
   };
 
   const renderFullContent = (content: string) => {
-    
     const lines = content.split("\n");
     return lines.map((line, index) => {
       if (line.startsWith("## ")) {
@@ -115,81 +170,6 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
         onClose={() => setOpenAddPostModal(false)}
         onSubmit={handleAddPost}
       />
-      {/* Stats Cards
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <FaUsers className="w-4 h-4 text-blue-500" />
-                <span className="text-sm text-muted-foreground">
-                  Total customers
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-2xl font-bold">567,899</span>
-              <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                📈 2.6%
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <FaUsers className="w-4 h-4 text-blue-500" />
-                <span className="text-sm text-muted-foreground">
-                  Total customers
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-2xl font-bold">567,899</span>
-              <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                📈 2.6%
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <FaUsers className="w-4 h-4 text-blue-500" />
-                <span className="text-sm text-muted-foreground">
-                  Total customers
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-2xl font-bold">567,899</span>
-              <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                📈 2.6%
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <FaUsers className="w-4 h-4 text-blue-500" />
-                <span className="text-sm text-muted-foreground">
-                  Total customers
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-2xl font-bold">567,899</span>
-              <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                📈 2.6%
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-      </div> */}
 
       {/* Release Posts Carousel */}
       <ReleasePostCarousel
@@ -213,6 +193,52 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
           renderFullContent={renderFullContent}
         />
       )}
+
+      {/* Add Post Modal */}
+      <AddReleasePostModal
+        open={openAddPostModal}
+        onClose={() => setOpenAddPostModal(false)}
+        onSubmit={handleAddPost}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog({ open, postId: null })}
+      >
+        <AlertDialogContent
+          className={
+            darkMode
+              ? "bg-gray-800 border-gray-700"
+              : "bg-white border-gray-200"
+          }
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle className={textClass}>
+              Delete Post
+            </AlertDialogTitle>
+            <AlertDialogDescription
+              className={darkMode ? "text-gray-400" : "text-gray-600"}
+            >
+              Are you sure you want to delete this release post? This action
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              className={darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -1,7 +1,8 @@
 // App.tsx
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import ProtectedDashboard from './components/protectedDashboard/ProtectedDashboard';
-import Dashboard from './components/dashboard/Dashboard';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Toaster } from "@/components/ui/sonner";
+import ProtectedDashboard from "./components/protectedDashboard/ProtectedDashboard";
+import Dashboard from "./components/dashboard/Dashboard";
 
 function App() {
   return (
@@ -9,11 +10,11 @@ function App() {
       <Routes>
         {/* Redirect root to dashboard */}
         <Route path="/" element={<ProtectedDashboard />} />
-        
+
         {/* Dashboard routes - handles all /dashboard/* paths */}
         <Route path="/dashboard/*" element={<Dashboard />} />
-        
       </Routes>
+      <Toaster position="bottom-right" richColors closeButton />
     </Router>
   );
 }

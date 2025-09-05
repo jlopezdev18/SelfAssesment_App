@@ -2,7 +2,13 @@
 import React, { useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Sidebar from "../sidebar/Sidebar";
-import { DashboardMain, Downloads, Settings, ClientsDashboard, Versioning } from "./tabs";
+import {
+  DashboardMain,
+  Downloads,
+  Settings,
+  ClientsDashboard,
+  Versioning,
+} from "./tabs";
 import { FaDownload, FaFileAlt, FaCog } from "react-icons/fa";
 import { useIsAdmin } from "../../hooks/useIsAdmin";
 
@@ -50,8 +56,8 @@ const Dashboard: React.FC = () => {
         <div className="flex-1 overflow-auto">
           <Routes>
             <Route index element={<Navigate to="dashboard/main" replace />} />
-            <Route 
-              path="/main" 
+            <Route
+              path="/main"
               element={
                 <DashboardMain
                   darkMode={darkMode}
@@ -59,10 +65,10 @@ const Dashboard: React.FC = () => {
                   textClass={textClass}
                   mutedTextClass={mutedTextClass}
                 />
-              } 
+              }
             />
-            <Route 
-              path="/downloads" 
+            <Route
+              path="/downloads"
               element={
                 <Downloads
                   cardClass={cardClass}
@@ -71,10 +77,10 @@ const Dashboard: React.FC = () => {
                   darkMode={darkMode}
                   getTypeIcon={getTypeIcon}
                 />
-              } 
+              }
             />
-            <Route 
-              path="/versioning" 
+            <Route
+              path="/versioning"
               element={
                 <Versioning
                   cardClass={cardClass}
@@ -83,22 +89,21 @@ const Dashboard: React.FC = () => {
                   darkMode={darkMode}
                   isAdmin={isAdmin}
                 />
-              } 
+              }
             />
-            <Route 
-              path="/settings" 
-              element={<Settings darkMode={darkMode} />} 
+            <Route
+              path="/settings"
+              element={<Settings darkMode={darkMode} />}
             />
-            <Route 
-              path="/clients" 
+            <Route
+              path="/clients"
               element={
                 <ClientsDashboard
                   cardClass={cardClass}
-                  textClass={textClass}
                   mutedTextClass={mutedTextClass}
                   darkMode={darkMode}
                 />
-              } 
+              }
             />
           </Routes>
         </div>

@@ -10,12 +10,13 @@ import {
   FaEdit,
   FaFileAlt,
 } from "react-icons/fa";
+import { Button } from "@/components/ui/button";
 import VersionForm from "./VersionForm";
 import type { VersioningProps } from "./types/VersioningInterfaces";
 import { useLatestVersion } from "./hooks/useLatestVersion";
-import Swal from "sweetalert2";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { storage } from "../../../../firebase/config";
+import { toast } from "sonner";
 
 interface FileProps {
   id: string;
@@ -42,8 +43,7 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
   } = useLatestVersion();
   const [copiedHash, setCopiedHash] = useState("");
   const [expandedFile, setExpandedFile] = useState<string | null>(null);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [showEditForm, setShowEditForm] = useState(false);
+  const [formMode, setFormMode] = useState<"none" | "add" | "edit">("none");
   const [selectedInstallerFile, setSelectedInstallerFile] =
     useState<File | null>(null);
   const [selectedUpdateFile, setSelectedUpdateFile] = useState<File | null>(
@@ -100,7 +100,7 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
 
   // Fill formData with current version info when editing
   useEffect(() => {
-    if (showEditForm && versionData) {
+    if (formMode === "edit" && versionData) {
       setFormData({
         version: versionData.version,
         releaseDate: versionData.releaseDate,
@@ -137,7 +137,9 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
                     ?.hashes[2]?.hash || "",
               },
             ],
-            downloadId: versionData.files.find((f) => f.type === "installer")?.downloadId || "",
+            downloadId:
+              versionData.files.find((f) => f.type === "installer")
+                ?.downloadId || "",
           },
           update: {
             filename:
@@ -169,12 +171,52 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
                     ?.hash || "",
               },
             ],
-            downloadId: versionData.files.find((f) => f.type === "update")?.downloadId || "",
+            downloadId:
+              versionData.files.find((f) => f.type === "update")?.downloadId ||
+              "",
           },
         },
       });
     }
-  }, [showEditForm, versionData]);
+  }, [formMode, versionData]);
+
+  // Reset formData when switching to "add" mode
+  useEffect(() => {
+    if (formMode === "add") {
+      setFormData({
+        version: "",
+        releaseDate: "",
+        releaseType: "stable",
+        description: "",
+        files: {
+          installer: {
+            filename: "",
+            type: "installer",
+            size: "",
+            downloadUrl: "",
+            hashes: [
+              { algorithm: "SHA512", hash: "" },
+              { algorithm: "SHA384", hash: "" },
+              { algorithm: "SHA256", hash: "" },
+            ],
+            downloadId: "",
+          },
+          update: {
+            filename: "",
+            type: "update",
+            size: "",
+            downloadUrl: "",
+            hashes: [
+              { algorithm: "SHA512", hash: "" },
+              { algorithm: "SHA384", hash: "" },
+              { algorithm: "SHA256", hash: "" },
+            ],
+            downloadId: "",
+          },
+        },
+      });
+    }
+  }, [formMode]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -190,14 +232,14 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
     if (file.downloadUrl && file.downloadUrl !== "#") {
       window.open(file.downloadUrl, "_blank");
     } else {
-      Swal.fire(`Download would start for: ${file.filename}`, "", "info");
+      toast.info(`Download would start for: ${file.filename}`);
     }
   };
 
   // --- ADD VERSION ---
   const handleSubmit = async (): Promise<void> => {
     if (!formData.version || !formData.releaseType || !formData.description) {
-      Swal.fire("Please fill in all version information fields", "", "warning");
+      toast.warning("Please fill in all version information fields");
       return;
     }
 
@@ -241,12 +283,16 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
     }
 
     if (filesToAdd.length === 0) {
-      Swal.fire("Please fill in at least one file information", "", "warning");
+      toast.warning("Please fill in at least one file information");
       return;
     }
 
     const today = new Date();
-    const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")} ${String(today.getHours()).padStart(2, "0")}:${String(today.getMinutes()).padStart(2, "0")}`;
+    const formattedDate = `${today.getFullYear()}-${String(
+      today.getMonth() + 1
+    ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")} ${String(
+      today.getHours()
+    ).padStart(2, "0")}:${String(today.getMinutes()).padStart(2, "0")}`;
 
     const dataToSubmit = {
       version: formData.version,
@@ -258,7 +304,16 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
 
     await addVersion(dataToSubmit);
 
-    setShowAddForm(false);
+    setFormMode("none");
+
+    toast("Version added successfully! 🎉", {
+      style: {
+        background: "#10b981",
+        color: "white",
+        border: "1px solid #059669",
+      },
+      duration: 4000,
+    });
 
     setFormData({
       version: "",
@@ -299,8 +354,8 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
 
   // --- EDIT VERSION ---
   const handleEditVersionSubmit = async (): Promise<void> => {
-   if (!formData.version || !formData.releaseType || !formData.description) {
-      Swal.fire("Por favor completa todos los campos de la versión", "", "warning");
+    if (!formData.version || !formData.releaseType || !formData.description) {
+      toast.warning("Por favor completa todos los campos de la versión");
       return;
     }
 
@@ -334,14 +389,18 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
       if (formData.files.installer.filename && formData.files.installer.size) {
         filesToUpdate.push({
           ...formData.files.installer,
-          id: files.find((f) => f.type === "installer")?.id || Date.now().toString(),
+          id:
+            files.find((f) => f.type === "installer")?.id ||
+            Date.now().toString(),
           downloadUrl: installerDownloadUrl,
         });
       }
       if (formData.files.update.filename && formData.files.update.size) {
         filesToUpdate.push({
           ...formData.files.update,
-          id: files.find((f) => f.type === "update")?.id || (Date.now() + 1).toString(),
+          id:
+            files.find((f) => f.type === "update")?.id ||
+            (Date.now() + 1).toString(),
           downloadUrl: updateDownloadUrl,
         });
       }
@@ -359,11 +418,18 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
       // Limpiar estado de selección de archivos y cerrar el formulario
       setSelectedInstallerFile(null);
       setSelectedUpdateFile(null);
-      setShowEditForm(false);
+      setFormMode("none");
 
-      Swal.fire("Versión actualizada", "", "success");
+      toast("Version updated successfully! ✨", {
+        style: {
+          background: "#10b981",
+          color: "white",
+          border: "1px solid #059669",
+        },
+        duration: 4000,
+      });
     } catch {
-      Swal.fire("Error al actualizar la versión", "Intenta de nuevo.", "error");
+      toast.error("Error al actualizar la versión, intenta de nuevo");
     }
   };
 
@@ -479,7 +545,7 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
   if (loading) {
     return (
       <div className="flex justify-center items-center h-full">
-        <ScaleLoader color={darkMode ? "#fff" : "#2563eb"}  />
+        <ScaleLoader color={darkMode ? "#60a5fa" : "#2563eb"} />
       </div>
     );
   }
@@ -491,21 +557,24 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
           Version Information
         </h1>
         {isAdmin && (
-          <div className="flex space-x-4">
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          <div className="flex space-x-3">
+            <Button
+              onClick={() => setFormMode("add")}
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+              size="lg"
             >
-              <FaPlus className="w-4 h-4 mr-2 inline" />
+              <FaPlus className="w-4 h-4 mr-2" />
               Add Version
-            </button>
-            <button
-              onClick={() => setShowEditForm(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            </Button>
+            <Button
+              onClick={() => setFormMode("edit")}
+              variant="outline"
+              className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+              size="lg"
             >
-              <FaEdit className="w-4 h-4 ml-2 inline" />
+              <FaEdit className="w-4 h-4 mr-2" />
               Edit Version
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -557,16 +626,42 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
         </p>
       </div>
 
-      {/* Add Version Form */}
-      {showAddForm && (
+      {/* Version Form - Only show one form at a time */}
+      {formMode !== "none" && (
         <div
-          className={`${cardClass} p-6 rounded-xl shadow-sm border ${
+          className={`${cardClass} p-6 rounded-xl shadow-lg border ${
             darkMode ? "border-gray-700" : "border-gray-100"
-          } mb-6`}
+          } mb-6 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-gray-800/50 dark:to-gray-700/50`}
         >
-          <h3 className={`text-xl font-bold ${textClass} mb-4`}>
-            Add New Version
-          </h3>
+          <div className="flex items-center justify-between mb-6">
+            <h3
+              className={`text-2xl font-bold ${textClass} flex items-center gap-3`}
+            >
+              {formMode === "add" ? (
+                <>
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                    <FaPlus className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  Add New Version
+                </>
+              ) : (
+                <>
+                  <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
+                    <FaEdit className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  Edit Version
+                </>
+              )}
+            </h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setFormMode("none")}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </Button>
+          </div>
           <VersionForm
             darkMode={darkMode}
             textClass={textClass}
@@ -575,34 +670,11 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
             setFormData={setFormData}
             setSelectedInstallerFile={setSelectedInstallerFile}
             setSelectedUpdateFile={setSelectedUpdateFile}
-            onCancel={() => setShowAddForm(false)}
-            onSubmit={handleSubmit}
-            isEdit={false}
-          />
-        </div>
-      )}
-
-      {/* Edit Version Form */}
-      {showEditForm && (
-        <div
-          className={`${cardClass} p-6 rounded-xl shadow-sm border ${
-            darkMode ? "border-gray-700" : "border-gray-100"
-          } mb-6`}
-        >
-          <h3 className={`text-xl font-bold ${textClass} mb-4`}>
-            Edit Version
-          </h3>
-          <VersionForm
-            darkMode={darkMode}
-            textClass={textClass}
-            mutedTextClass={mutedTextClass}
-            formData={formData}
-            setFormData={setFormData}
-            setSelectedInstallerFile={setSelectedInstallerFile}
-            setSelectedUpdateFile={setSelectedUpdateFile}
-            onCancel={() => setShowEditForm(false)}
-            onSubmit={handleEditVersionSubmit}
-            isEdit={true}
+            onCancel={() => setFormMode("none")}
+            onSubmit={
+              formMode === "add" ? handleSubmit : handleEditVersionSubmit
+            }
+            isEdit={formMode === "edit"}
           />
         </div>
       )}

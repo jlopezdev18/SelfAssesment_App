@@ -1,5 +1,5 @@
 import React from "react";
-import { FaUser } from "react-icons/fa";
+import { User } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -23,10 +23,9 @@ interface UserModalProps {
   onChange: (field: keyof NewUserForm, value: string) => void;
   selectedCompany: string | null;
   companies: Company[];
-  textClass: string;
   cardClass: string;
   loading: boolean;
-  isEditing?: boolean; 
+  isEditing?: boolean;
 }
 
 const UserModal: React.FC<UserModalProps> = ({
@@ -39,7 +38,7 @@ const UserModal: React.FC<UserModalProps> = ({
   selectedCompany,
   companies,
   loading,
-  isEditing
+  isEditing,
 }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,11 +50,11 @@ const UserModal: React.FC<UserModalProps> = ({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FaUser className="h-5 w-5" />
+            <User className="h-5 w-5" />
             {isEditing ? "Edit User" : "Add User to Company"}
           </DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -71,7 +70,7 @@ const UserModal: React.FC<UserModalProps> = ({
                 <p className="text-sm text-destructive">{errors.firstName}</p>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="lastName">Last Name</Label>
               <Input
@@ -86,7 +85,7 @@ const UserModal: React.FC<UserModalProps> = ({
               )}
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -100,30 +99,36 @@ const UserModal: React.FC<UserModalProps> = ({
               <p className="text-sm text-destructive">{errors.email}</p>
             )}
           </div>
-          
+
           {selectedCompany && (
             <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border">
               <Badge variant="secondary" className="mb-2">
                 Adding to
               </Badge>
               <p className="text-sm font-medium">
-                {companies.find(c => c.id === selectedCompany)?.name}
+                {companies.find((c) => c.id === selectedCompany)?.companyName}
               </p>
             </div>
           )}
-          
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+            >
               {loading ? (
                 <>
                   <PulseLoader color="currentColor" size={8} className="mr-2" />
                   {isEditing ? "Updating..." : "Adding..."}
                 </>
+              ) : isEditing ? (
+                "Update User"
               ) : (
-                isEditing ? "Update User" : "Add User"
+                "Add User"
               )}
             </Button>
           </DialogFooter>

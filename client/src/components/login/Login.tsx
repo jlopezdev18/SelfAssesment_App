@@ -1,17 +1,24 @@
 import { useState } from "react";
-import { HiOutlineLockClosed, HiOutlineMail, HiExclamationCircle } from "react-icons/hi";
+import { Lock, Mail, AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 import Logo from "/assets/Logo.svg";
 import { loginWithEmail } from "../../firebase/auth";
 import { getAuth } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 
-export default function Login({ onShowResetForm }: { onShowResetForm: () => void }) {
+export default function Login({
+  onShowResetForm,
+}: {
+  onShowResetForm: () => void;
+}) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -20,10 +27,10 @@ export default function Login({ onShowResetForm }: { onShowResetForm: () => void
     e.preventDefault();
     setIsLoading(true);
     setError(""); // Clear previous errors
-    
+
     try {
       await loginWithEmail(email, password);
-        
+
       // Check for firstTimeLogin claim
       const auth = getAuth();
       const user = auth.currentUser;
@@ -33,13 +40,27 @@ export default function Login({ onShowResetForm }: { onShowResetForm: () => void
           onShowResetForm();
           return;
         }
+
+        // Show welcome toast for successful login
+        const userName =
+          user.displayName || user.email?.split("@")[0] || "User";
+        toast.success(`Welcome back, ${userName}! 🎉`, {
+          description: "You've successfully logged in to your dashboard.",
+          duration: 4000,
+          style: {
+            background: "#10b981",
+            color: "white",
+            border: "none",
+          },
+        });
       }
-     navigate("/dashboard/main", { replace: true });
+
+      navigate("/dashboard/main", { replace: true });
       // Continue with normal login flow (redirect, etc.)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Login failed:", error.code);
-      
+
       // Simplified error handling
       setError("Login failed. Please check your credentials and try again.");
     } finally {
@@ -55,125 +76,150 @@ export default function Login({ onShowResetForm }: { onShowResetForm: () => void
           "linear-gradient(90deg, rgba(32, 174, 248, 1) 0%, rgba(10, 148, 255, 1) 54%, rgba(143, 207, 255, 1) 100%)",
       }}
     >
-      <Card className="w-full max-w-md shadow-lg overflow-hidden">
-        <CardContent className="px-8 pt-8 pb-10">
-          <div className="flex justify-center mb-6">
+      <div className="w-full max-w-md space-y-8">
+        {/* Logo and Header */}
+        <div className="text-center space-y-4">
+          <div className="flex justify-center">
             <img
               src={Logo}
               alt="Self Assessment Logo"
-              className="w-20 h-20 drop-shadow-sm"
+              className="w-20 h-20 drop-shadow-lg"
             />
           </div>
-          
-          <div className="mb-8 text-center">
-            <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-600 to-blue-800 mb-3">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-50 via-white to-blue-100 drop-shadow-lg">
               Welcome back
-            </h2>
-            <p className="text-sm text-muted-foreground">
+            </h1>
+            <p className="text-sm text-blue-100">
               Enter your credentials to access your account
             </p>
           </div>
+        </div>
 
-          {/* Error Alert */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
-              <div className="flex items-center">
-                <HiExclamationCircle className="h-5 w-5 text-red-400 mr-2" />
-                <span className="text-sm text-red-800">{error}</span>
-              </div>
-            </div>
-          )}
+        {/* Login Card */}
+        <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
+          <CardContent className="px-8 pt-8 pb-10 space-y-6">
+            {/* Error Alert */}
+            {error && (
+              <Alert
+                variant="destructive"
+                className="animate-in slide-in-from-top-2 duration-300"
+              >
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-          <form onSubmit={onSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email address</Label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
-                  <HiOutlineMail />
-                </span>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  className={`pl-10 ${error ? 'border-red-300 focus:border-red-500' : ''}`}
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (error) setError(""); // Clear error when user starts typing
-                  }}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Button
-                  type="button"
-                  variant="link"
-                  size="sm"
-                  onClick={onShowResetForm}
-                  className="p-0 h-auto text-xs font-medium text-blue-600 hover:text-blue-400"
+            <form onSubmit={onSubmit} className="space-y-4">
+              {/* Email Field */}
+              <div className="space-y-2">
+                <Label
+                  htmlFor="email"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
-                  Reset Password
-                </Button>
+                  Email address
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    className={`pl-10 h-11 transition-all duration-200 ${
+                      error
+                        ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                        : "focus:ring-blue-500 focus:border-blue-500"
+                    }`}
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (error) setError("");
+                    }}
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
               </div>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
-                  <HiOutlineLockClosed />
-                </span>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  className={`pl-10 ${error ? 'border-red-300 focus:border-red-500' : ''}`}
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (error) setError(""); // Clear error when user starts typing
-                  }}
-                  required
-                />
-              </div>
-            </div>
 
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="w-full"
-              style={{
-                background:
-                  "linear-gradient(45deg, rgba(32, 174, 248, 1) 0%, rgba(10, 148, 255, 1) 50%)",
-              }}
-            >
-              {isLoading && (
-                <svg
-                  className="animate-spin -ml-1 mr-2 h-4 w-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-              )}
-              {isLoading ? "Signing in..." : "Sign in"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+              {/* Password Field */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label
+                    htmlFor="password"
+                    className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    Password
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    onClick={onShowResetForm}
+                    className="p-0 h-auto text-xs font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+                    disabled={isLoading}
+                  >
+                    Forgot password?
+                  </Button>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    className={`pl-10 pr-10 h-11 transition-all duration-200 ${
+                      error
+                        ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                        : "focus:ring-blue-500 focus:border-blue-500"
+                    }`}
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (error) setError("");
+                    }}
+                    required
+                    disabled={isLoading}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={isLoading}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                disabled={isLoading || !email || !password}
+                className="w-full h-11 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  background:
+                    "linear-gradient(45deg, rgba(32, 174, 248, 1) 0%, rgba(10, 148, 255, 1) 50%)",
+                }}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign in"
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

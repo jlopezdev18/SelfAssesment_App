@@ -15,15 +15,19 @@ import type {
 import ScaleLoader from "react-spinners/ScaleLoader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Zod schemas for validation
 const companySchema = z.object({
@@ -42,7 +46,6 @@ const userSchema = z.object({
 
 const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
   cardClass,
-  textClass,
   mutedTextClass,
   darkMode,
 }) => {
@@ -51,7 +54,6 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [expandedCompanies, setExpandedCompanies] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -78,6 +80,23 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
   const [userFormErrors, setUserFormErrors] = useState<Partial<NewUserForm>>(
     {}
   );
+
+  // Confirmation dialog state
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    type: "company" | "user" | "bulk" | null;
+    id: string | string[]; // Single ID or array of IDs for bulk delete
+    companyId?: string;
+    title: string;
+    description: string;
+  }>({
+    open: false,
+    type: null,
+    id: "",
+    companyId: "",
+    title: "",
+    description: "",
+  });
 
   const {
     companies,
@@ -106,9 +125,7 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
           user.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           user.email?.toLowerCase().includes(searchTerm.toLowerCase())
       );
-    const matchesFilter =
-      filterStatus === "all" || company.status === filterStatus;
-    return matchesSearch && matchesFilter;
+    return matchesSearch;
   });
 
   const handleSelectCompany = (companyId: string) => {
@@ -261,12 +278,36 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
         updateCompany(
           editingCompany.id,
           newCompanyForm,
-          handleCloseCompanyModal,
+          () => {
+            handleCloseCompanyModal();
+            toast("Company updated successfully", {
+              style: {
+                background: "#059669",
+                color: "white",
+                border: "1px solid #059669",
+              },
+              duration: 4000,
+            });
+          },
           () => {}
         );
       }
     } else {
-      addCompany(newCompanyForm, handleCloseCompanyModal, () => {});
+      addCompany(
+        newCompanyForm,
+        () => {
+          handleCloseCompanyModal();
+          toast("Company created successfully", {
+            style: {
+              background: "#059669",
+              color: "white",
+              border: "1px solid #059669",
+            },
+            duration: 4000,
+          });
+        },
+        () => {}
+      );
     }
   };
 
@@ -295,14 +336,34 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
         editingUser.id,
         selectedCompanyForUser,
         newUserForm,
-        handleCloseUserModal,
+        () => {
+          handleCloseUserModal();
+          toast("User updated successfully", {
+            style: {
+              background: "#059669",
+              color: "white",
+              border: "1px solid #059669",
+            },
+            duration: 4000,
+          });
+        },
         () => {}
       );
     } else {
       addUserToCompany(
         selectedCompanyForUser,
         newUserForm,
-        handleCloseUserModal,
+        () => {
+          handleCloseUserModal();
+          toast("User added successfully", {
+            style: {
+              background: "#059669",
+              color: "white",
+              border: "1px solid #059669",
+            },
+            duration: 4000,
+          });
+        },
         () => {}
       );
     }
@@ -321,26 +382,110 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
 
   const handleDeleteSelectedCompany = () => {
     if (selectedCompanies.length === 0) return;
-    selectedCompanies.forEach((companyId) => {
-      deleteCompany(companyId, () => {});
+
+    const selectedCompanyNames = selectedCompanies.map((id) => {
+      const company = companies.find((c) => c.id === id);
+      return company?.companyName || "Unknown Company";
     });
-    setSelectedCompanies([]);
+
+    setDeleteDialog({
+      open: true,
+      type: "bulk",
+      id: selectedCompanies,
+      title: `Delete ${selectedCompanies.length} ${
+        selectedCompanies.length === 1 ? "Company" : "Companies"
+      }`,
+      description: `Are you sure you want to delete the following ${
+        selectedCompanies.length === 1 ? "company" : "companies"
+      }?\n\n${selectedCompanyNames.join(", ")}\n\nThis will deactivate ${
+        selectedCompanies.length === 1 ? "the company" : "these companies"
+      } and all their users. This action cannot be undone.`,
+    });
   };
 
   const handleDeleteCompany = (companyId: string) => {
-    deleteCompany(companyId, () => {});
+    const company = companies.find((c) => c.id === companyId);
+    setDeleteDialog({
+      open: true,
+      type: "company",
+      id: companyId,
+      title: "Delete Company",
+      description: `Are you sure you want to delete "${company?.companyName}"? This will deactivate the company and all its users. This action cannot be undone.`,
+    });
   };
 
   const handleDeleteUser = async (userId: string, companyId: string) => {
-    deleteUser(userId, companyId);
+    const company = companies.find((c) => c.id === companyId);
+    const user = company?.users.find((u) => u.id === userId);
+    setDeleteDialog({
+      open: true,
+      type: "user",
+      id: userId,
+      companyId: companyId,
+      title: "Delete User",
+      description: `Are you sure you want to delete "${user?.firstName} ${user?.lastName}"? This will deactivate the user's access. This action cannot be undone.`,
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (
+      deleteDialog.type === "company" &&
+      typeof deleteDialog.id === "string"
+    ) {
+      deleteCompany(deleteDialog.id, () => {
+        toast("Company deleted successfully", {
+          style: {
+            background: "#dc2626",
+            color: "white",
+            border: "1px solid #dc2626",
+          },
+          duration: 4000,
+        });
+      });
+    } else if (deleteDialog.type === "bulk" && Array.isArray(deleteDialog.id)) {
+      deleteDialog.id.forEach((companyId) => {
+        deleteCompany(companyId, () => {
+          toast("Company deleted successfully", {
+            style: {
+              background: "#dc2626",
+              color: "white",
+              border: "1px solid #dc2626",
+            },
+            duration: 4000,
+          });
+        });
+      });
+      setSelectedCompanies([]);
+    } else if (
+      deleteDialog.type === "user" &&
+      typeof deleteDialog.id === "string" &&
+      deleteDialog.companyId
+    ) {
+      deleteUser(deleteDialog.id, deleteDialog.companyId);
+      toast("User deleted successfully", {
+        style: {
+          background: "#dc2626",
+          color: "white",
+          border: "1px solid #dc2626",
+        },
+        duration: 4000,
+      });
+    }
+
+    setDeleteDialog({
+      open: false,
+      type: null,
+      id: "",
+      companyId: "",
+      title: "",
+      description: "",
+    });
   };
 
   const paginatedCompanies = filteredCompanies.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
-
-  const totalPages = Math.ceil(filteredCompanies.length / rowsPerPage);
 
   return (
     <div
@@ -356,48 +501,30 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
           <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-600 to-blue-800 mb-3">
             Companies & Users
           </h1>
-          <button
-            className="text-white px-6 py-3 rounded-lg text-sm font-medium transition-all hover:shadow-lg transform hover:scale-105"
-            style={{
-              background:
-                "linear-gradient(90deg, rgba(32, 174, 248, 1) 0%, rgba(10, 148, 255, 1) 54%, rgba(143, 207, 255, 1) 100%)",
-            }}
+          <Button
             onClick={handleOpenCompanyModal}
+            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+            size="lg"
           >
-            <FaBuilding className="inline mr-2" />
+            <FaBuilding className="w-4 h-4 mr-2" />
             New Company
-          </button>
+          </Button>
         </div>
 
-        {/* Search and Filter */}
+        {/* Search */}
         <Card className="mb-6">
           <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaSearch className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <Input
-                  type="text"
-                  placeholder="Search companies and users..."
-                  className="pl-10"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+            <div className="relative w-full">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FaSearch className="h-5 w-5 text-muted-foreground" />
               </div>
-              <div className="sm:w-48">
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Input
+                type="text"
+                placeholder="Search companies and users..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
           </CardContent>
         </Card>
@@ -435,87 +562,36 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
             <ScaleLoader color={darkMode ? "#fff" : "#2563eb"} />
           </div>
         ) : (
-          <>
-            <CompanyTable
-              companies={paginatedCompanies}
-              selectedCompanies={selectedCompanies}
-              expandedCompanies={expandedCompanies}
-              activeDropdown={activeDropdown}
-              onSelectCompany={handleSelectCompany}
-              onSelectAll={handleSelectAllClick}
-              onToggleExpand={toggleCompanyExpansion}
-              onOpenUserModal={handleOpenUserModal}
-              onDropdown={setActiveDropdown}
-              onEditCompany={handleEditCompany}
-              onNotifyCompany={handleNotifyCompany}
-              onDeleteCompany={handleDeleteCompany}
-              onEditUser={handleEditUser}
-              onDeleteUser={handleDeleteUser}
-              isSelected={isSelected}
-              getStatusBadge={getStatusBadge}
-              formatDate={formatDate}
-              cardClass={cardClass}
-              textClass={textClass}
-              mutedTextClass={mutedTextClass}
-              darkMode={darkMode}
-            />
-
-            {/* Pagination */}
-            <div
-              className={`px-6 py-3 flex items-center justify-between border-t border-gray-200 ${
-                darkMode ? "bg-gray-900" : "bg-white"
-              }`}
-            >
-              <div className={`flex items-center text-sm ${textClass}`}>
-                <span>
-                  Showing {page * rowsPerPage + 1} to{" "}
-                  {Math.min((page + 1) * rowsPerPage, filteredCompanies.length)}{" "}
-                  of {filteredCompanies.length} entries
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <select
-                  className={`px-3 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${textClass} ${cardClass}`}
-                  value={rowsPerPage}
-                  onChange={(e) => {
-                    setRowsPerPage(parseInt(e.target.value));
-                    setPage(0);
-                  }}
-                >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                </select>
-                <div className="flex">
-                  <button
-                    className={`px-3 py-1 border border-gray-300 rounded-l-md text-sm hover:${
-                      darkMode ? "bg-gray-700" : "bg-gray-50"
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
-                    disabled={page === 0}
-                    onClick={() => setPage(page - 1)}
-                  >
-                    Previous
-                  </button>
-                  <span
-                    className={`px-3 py-1 border-t border-b border-gray-300 ${
-                      darkMode ? "bg-gray-700" : "bg-gray-50"
-                    } text-sm`}
-                  >
-                    {page + 1} of {totalPages}
-                  </span>
-                  <button
-                    className={`px-3 py-1 border border-gray-300 rounded-r-md text-sm hover:${
-                      darkMode ? "bg-gray-700" : "bg-gray-50"
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
-                    disabled={page >= totalPages - 1}
-                    onClick={() => setPage(page + 1)}
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            </div>
-          </>
+          <CompanyTable
+            companies={paginatedCompanies}
+            selectedCompanies={selectedCompanies}
+            expandedCompanies={expandedCompanies}
+            activeDropdown={activeDropdown}
+            onSelectCompany={handleSelectCompany}
+            onSelectAll={handleSelectAllClick}
+            onToggleExpand={toggleCompanyExpansion}
+            onOpenUserModal={handleOpenUserModal}
+            onDropdown={setActiveDropdown}
+            onEditCompany={handleEditCompany}
+            onNotifyCompany={handleNotifyCompany}
+            onDeleteCompany={handleDeleteCompany}
+            onEditUser={handleEditUser}
+            onDeleteUser={handleDeleteUser}
+            isSelected={isSelected}
+            getStatusBadge={getStatusBadge}
+            formatDate={formatDate}
+            cardClass={cardClass}
+            mutedTextClass={mutedTextClass}
+            darkMode={darkMode}
+            page={page}
+            rowsPerPage={rowsPerPage}
+            totalCompanies={filteredCompanies.length}
+            onPageChange={setPage}
+            onRowsPerPageChange={(newRowsPerPage) => {
+              setRowsPerPage(newRowsPerPage);
+              setPage(0);
+            }}
+          />
         )}
       </div>
 
@@ -527,7 +603,6 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
         form={newCompanyForm}
         errors={companyFormErrors}
         onChange={handleCompanyFormChange}
-        textClass={textClass}
         cardClass={cardClass}
         loading={loading}
         isEditing={!!editingCompany}
@@ -543,11 +618,63 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
         onChange={handleUserFormChange}
         selectedCompany={selectedCompanyForUser}
         companies={companies}
-        textClass={textClass}
         cardClass={cardClass}
         loading={loading}
         isEditing={!!editingUser}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteDialog({
+              open: false,
+              type: null,
+              id: "",
+              companyId: "",
+              title: "",
+              description: "",
+            });
+          }
+        }}
+      >
+        <AlertDialogContent className="z-[9999] bg-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-black">
+              {deleteDialog.title}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-600">
+              {deleteDialog.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              className="bg-gray-100 text-black border border-gray-300"
+              onClick={() => {
+                setDeleteDialog({
+                  open: false,
+                  type: null,
+                  id: "",
+                  companyId: "",
+                  title: "",
+                  description: "",
+                });
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                handleConfirmDelete();
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

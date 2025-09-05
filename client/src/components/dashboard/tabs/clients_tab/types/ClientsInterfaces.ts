@@ -25,7 +25,6 @@ export interface Company {
 
 export interface CompanyDashboardProps {
   cardClass: string;
-  textClass: string;
   mutedTextClass: string;
   darkMode: boolean;
 }

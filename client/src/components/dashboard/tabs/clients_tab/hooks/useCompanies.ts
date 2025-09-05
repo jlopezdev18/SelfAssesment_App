@@ -6,7 +6,6 @@ import type {
   User,
 } from "../types/ClientsInterfaces";
 import axios from "axios";
-import Swal from "sweetalert2";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 export function useCompanies(initialCompanies: Company[]) {
@@ -64,23 +63,9 @@ export function useCompanies(initialCompanies: Company[]) {
       );
       setCompanies((prev) => [...prev, response.data as Company]);
       onSuccess();
-      Swal.fire({
-        icon: "success",
-        title: "Company created!",
-        text: "The new company has been added successfully.",
-        timer: 2000,
-        showConfirmButton: false,
-      });
       fetchCompanies(); // Refresh the list of companies
     } catch {
       onError();
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Error creating company in database.",
-        timer: 2000,
-        showConfirmButton: false,
-      });
     } finally {
       setLoading(false);
     }
@@ -107,22 +92,8 @@ export function useCompanies(initialCompanies: Company[]) {
       );
       onSuccess();
       fetchCompanies(); // Refresh the list of companies
-      Swal.fire({
-        icon: "success",
-        title: "User added!",
-        text: "The new user has been added to the company.",
-        timer: 2000,
-        showConfirmButton: false,
-      });
     } catch {
       onError();
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Error adding user to company.",
-        timer: 2000,
-        showConfirmButton: false,
-      });
     } finally {
       setLoading(false);
     }
@@ -167,24 +138,10 @@ export function useCompanies(initialCompanies: Company[]) {
         })
       );
       onSuccess();
-      await Swal.fire({
-        icon: "success",
-        title: "User updated!",
-        text: "The user has been updated successfully.",
-        timer: 2000,
-        showConfirmButton: false,
-      });
       await fetchCompanies();
     }
   } catch {
     onError();
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "Error updating user.",
-      timer: 2000,
-      showConfirmButton: false,
-    });
   } finally {
     setLoading(false);
   }
@@ -193,21 +150,6 @@ export function useCompanies(initialCompanies: Company[]) {
 const deleteUser = async (userId: string, companyId: string) => {
   setLoading(true);
   try {
-    const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: "This will deactivate the user's access!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete it!'
-    });
-
-    if (!result.isConfirmed) {
-      setLoading(false);
-      return;
-    }
-
     const response = await axios.delete(
       `${API_URL}/api/company/delete-user/${companyId}/${userId}`
     );
@@ -225,23 +167,10 @@ const deleteUser = async (userId: string, companyId: string) => {
         })
       );
 
-      await Swal.fire({
-        icon: "success",
-        title: "User deleted!",
-        text: "The user has been deactivated successfully.",
-        timer: 2000,
-        showConfirmButton: false,
-      });
       await fetchCompanies();
     }
   } catch {
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "Error deleting user.",
-      timer: 2000,
-      showConfirmButton: false,
-    });
+    // Error handling will be done in the component
   } finally {
     setLoading(false);
   }
@@ -251,19 +180,6 @@ const deleteUser = async (userId: string, companyId: string) => {
  const deleteCompany = async (companyId: string, onError: () => void) => {
   setLoading(true);
   try {
-    const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: "This will deactivate the company and all its users!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete it!'
-    });
-    if (!result.isConfirmed) {
-      setLoading(false);
-      return;
-    }
     const response = await axios.delete(
       `${API_URL}/api/company/delete-company/${companyId}`,
       {
@@ -281,24 +197,10 @@ const deleteUser = async (userId: string, companyId: string) => {
             : company
         )
       );
-      await Swal.fire({
-        icon: "success",
-        title: "Company deleted!",
-        text: "The company has been deleted successfully.",
-        timer: 2000,
-        showConfirmButton: false,
-      });
       await fetchCompanies();
     }
   } catch  {
     onError();
-     Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Error deleting company.",
-        timer: 2000,
-        showConfirmButton: false,
-      });
   } finally {
     setLoading(false);
   }
@@ -339,22 +241,10 @@ const updateCompany = async (
         )
       );
       onSuccess();
-      await Swal.fire({
-        icon: "success",
-        title: "Company updated!",
-        text: "The company has been updated successfully.",
-        timer: 2000,
-        showConfirmButton: false,
-      });
       await fetchCompanies(); // Refresh the list
     }
   } catch {
     onError();
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "Error updating company.",
-    });
   } finally {
     setLoading(false);
   }

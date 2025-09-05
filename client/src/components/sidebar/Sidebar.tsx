@@ -3,11 +3,6 @@ import React from "react";
 import {
   FaChartBar,
   FaDownload,
-  //FaFileAlt,
-  //FaDollarSign,
-  //FaCog,
-  // FaMoon,
-  // FaSun,
   FaSignOutAlt,
   FaChevronLeft,
   FaChevronRight,
@@ -21,8 +16,12 @@ import { useIsAdmin } from "../../hooks/useIsAdmin";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-// import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { NavItem } from "./NavItem";
 import { useNavigate } from "react-router";
 interface SidebarProps {
@@ -39,32 +38,31 @@ const Sidebar: React.FC<SidebarProps> = ({
   sidebarCollapsed,
   setSidebarCollapsed,
   darkMode,
-  //setDarkMode,
   mutedTextClass,
   textClass,
   sidebarClass,
 }) => {
-  const isAdmin = useIsAdmin();
+  const { isAdmin } = useIsAdmin();
   const [user] = useAuthState(auth);
   const navigate = useNavigate();
-
 
   const handleLogout = async () => {
     await signOut(auth);
     navigate("/", { replace: true });
   };
 
-  const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
+  const SectionHeader: React.FC<{ title: string }> = ({ title }) =>
     !sidebarCollapsed && (
-      <div className={`text-xs font-semibold ${mutedTextClass} uppercase tracking-wider mb-3 mt-6 first:mt-0`}>
+      <div
+        className={`text-xs font-semibold ${mutedTextClass} uppercase tracking-wider mb-3 mt-6 first:mt-0`}
+      >
         {title}
       </div>
-    )
-  );
+    );
 
   return (
     <div
-      className={`${ 
+      className={`${
         sidebarCollapsed ? "w-16" : "w-64"
       } ${sidebarClass} border-r transition-all duration-300 flex flex-col relative`}
     >
@@ -84,7 +82,11 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       <div className="flex-1 p-3">
         {/* Header with logo */}
-        <div className={`mb-8 mt-8 ${sidebarCollapsed ? "w-10" : "w-16"} justify-self-center`}>
+        <div
+          className={`mb-8 mt-8 ${
+            sidebarCollapsed ? "w-10" : "w-16"
+          } justify-self-center`}
+        >
           <img
             src={Logo}
             alt="Self Assessment Logo"
@@ -106,12 +108,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                   "linear-gradient(90deg, rgba(32, 174, 248, 1) 0%, rgba(10, 148, 255, 1) 54%, rgba(143, 207, 255, 1) 100%)",
               }}
             >
-              {(user?.displayName?.[0] || user?.email?.[0] || 'U').toUpperCase()}
+              {(
+                user?.displayName?.[0] ||
+                user?.email?.[0] ||
+                "U"
+              ).toUpperCase()}
             </div>
             {!sidebarCollapsed && (
               <div>
                 <h3 className={`font-semibold ${textClass} text-sm`}>
-                  {user?.displayName || user?.email?.split('@')[0] || "User"}
+                  {user?.displayName || user?.email?.split("@")[0] || "User"}
                 </h3>
               </div>
             )}
@@ -158,83 +164,6 @@ const Sidebar: React.FC<SidebarProps> = ({
               />
             </>
           )}
-
-          {/* <SectionHeader title="PAYMENTS" />
-
-          <NavItem
-            icon={<FaFileAlt className="w-5 h-5 flex-shrink-0" />}
-            label="Ledger"
-            path="/dashboard/ledger"
-            sidebarCollapsed={sidebarCollapsed}
-            darkMode={darkMode}
-          />
-
-          <NavItem
-            icon={<FaDollarSign className="w-5 h-5 flex-shrink-0" />}
-            label="Taxes"
-            path="/dashboard/taxes"
-            sidebarCollapsed={sidebarCollapsed}
-            darkMode={darkMode}
-          />
-
-          <SectionHeader title="SYSTEM" />
-
-          <NavItem
-            icon={<FaCog className="w-5 h-5 flex-shrink-0" />}
-            label="Settings"
-            path="/dashboard/settings"
-            sidebarCollapsed={sidebarCollapsed}
-            darkMode={darkMode}
-          /> */}
-
-          {/* Dark Mode Toggle */}
-          {/* <div className="pt-4">
-            <Separator className="mb-4" />
-            <div
-              className={`flex items-center ${
-                sidebarCollapsed ? "justify-center" : "justify-between"
-              } px-3 py-2`}
-            >
-              {!sidebarCollapsed && (
-                <div className="flex items-center space-x-3">
-                  {darkMode ? (
-                    <FaSun className="w-4 h-4" />
-                  ) : (
-                    <FaMoon className="w-4 h-4" />
-                  )}
-                  <span className={`text-sm ${textClass}`}>Dark mode</span>
-                </div>
-              )}
-              {sidebarCollapsed ? (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDarkMode(!darkMode)}
-                        className="w-10 h-10"
-                      >
-                        {darkMode ? (
-                          <FaSun className="w-4 h-4" />
-                        ) : (
-                          <FaMoon className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                      <p>Toggle dark mode</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ) : (
-                <Switch
-                  checked={darkMode}
-                  onCheckedChange={setDarkMode}
-                />
-              )}
-            </div>
-          </div> */}
         </nav>
       </div>
 

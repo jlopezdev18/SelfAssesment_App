@@ -42,24 +42,28 @@ const AddDownloadModal: React.FC<AddDownloadModalProps> = ({
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 backdrop-blur-xs bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center z-50 p-4">
       <div
-        className={`${cardClass} rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto`}
+        className={`${cardClass} rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto border ${
+          darkMode ? "border-gray-700" : "border-gray-200"
+        }`}
       >
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className={`text-2xl font-bold ${textClass}`}>Add New Item</h2>
+            <h2 className={`text-2xl font-bold ${textClass}`}>Add New File</h2>
             <button
               onClick={onClose}
-              className={`p-2 rounded-lg ${
-                darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
-              } transition-colors`}
+              className={`p-2 rounded-lg transition-colors ${
+                darkMode
+                  ? "hover:bg-gray-700 text-gray-400 hover:text-white"
+                  : "hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+              }`}
               disabled={uploading}
             >
-              <FaTimes className={`w-5 h-5 ${textClass}`} />
+              <FaTimes className="w-5 h-5" />
             </button>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-5">
             {/* Type */}
             <div>
               <label className={`block text-sm font-medium ${textClass} mb-2`}>
@@ -73,14 +77,22 @@ const AddDownloadModal: React.FC<AddDownloadModalProps> = ({
                     type: e.target.value as
                       | "installers"
                       | "documents"
-                      | "resources",
+                      | "resources"
+                      | "updates",
                   })
                 }
-                className={`w-full px-3 py-2 rounded-lg border ${
+                className={`w-full px-4 py-2.5 rounded-lg border transition-colors appearance-none cursor-pointer ${
                   darkMode
-                    ? "bg-gray-800 border-gray-700 text-white"
-                    : "bg-white border-gray-200 text-gray-800"
-                } focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                    ? "bg-gray-800 border-gray-600 text-white focus:border-blue-500"
+                    : "bg-white border-gray-300 text-gray-800 focus:border-blue-500"
+                } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
+                  backgroundPosition: "right 0.5rem center",
+                  backgroundRepeat: "no-repeat",
+                  backgroundSize: "1.5em 1.5em",
+                  paddingRight: "2.5rem",
+                }}
                 disabled={uploading}
               >
                 <option value="installers">Installer</option>
@@ -125,11 +137,11 @@ const AddDownloadModal: React.FC<AddDownloadModalProps> = ({
                           hashes: newHashes,
                         });
                       }}
-                      className={`w-full px-3 py-2 rounded-lg border font-mono text-sm ${
+                      className={`w-full px-4 py-2.5 rounded-lg border font-mono text-sm transition-colors ${
                         darkMode
-                          ? "bg-gray-800 border-gray-700 text-white"
-                          : "bg-white border-gray-200 text-gray-800"
-                      } focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                          ? "bg-gray-800 border-gray-600 text-white focus:border-blue-500"
+                          : "bg-white border-gray-300 text-gray-800 focus:border-blue-500"
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
                       placeholder={`Enter ${algorithm} hash`}
                       disabled={uploading}
                     />
@@ -139,18 +151,20 @@ const AddDownloadModal: React.FC<AddDownloadModalProps> = ({
             )}
             {/* File */}
             <div>
-              <label className={`block text-sm font-medium ${textClass} mb-1`}>
+              <label className={`block text-sm font-medium ${textClass} mb-2`}>
                 Upload File *
               </label>
               <div
-                className={`mt-1 flex justify-center px-6 pt-3 pb-3 border-2 border-dashed rounded-lg relative ${
-                  darkMode ? "border-gray-600" : "border-gray-300"
+                className={`mt-1 flex justify-center px-6 pt-4 pb-4 border-2 border-dashed rounded-lg relative transition-colors ${
+                  darkMode
+                    ? "border-gray-600 hover:border-gray-500"
+                    : "border-gray-300 hover:border-gray-400"
                 }`}
               >
                 {file ? (
                   <div className="relative w-full">
                     <div
-                      className={`p-4 rounded ${
+                      className={`p-4 rounded-lg ${
                         darkMode ? "bg-gray-800" : "bg-gray-50"
                       }`}
                     >
@@ -177,9 +191,10 @@ const AddDownloadModal: React.FC<AddDownloadModalProps> = ({
                         <button
                           type="button"
                           onClick={() => setFile(null)}
-                          className={`p-1 rounded-full hover:bg-gray-200 ${
+                          className={`p-1 rounded-full transition-colors ${
                             darkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"
                           }`}
+                          disabled={uploading}
                         >
                           <FaTimesCircle className="w-5 h-5 text-red-500" />
                         </button>
@@ -187,13 +202,13 @@ const AddDownloadModal: React.FC<AddDownloadModalProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-2 text-center py-3">
+                  <div className="space-y-3 text-center py-5">
                     <FaFileUpload
-                      className={`mx-auto h-8 w-8 ${
+                      className={`mx-auto h-10 w-10 ${
                         darkMode ? "text-gray-400" : "text-gray-400"
                       }`}
                     />
-                    <div className={`flex text-sm ${textClass}`}>
+                    <div className={`flex text-sm justify-center ${textClass}`}>
                       <label
                         className={`relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none`}
                       >
@@ -219,41 +234,40 @@ const AddDownloadModal: React.FC<AddDownloadModalProps> = ({
                 )}
               </div>
               {uploadError && (
-                <div className="mt-2 text-sm text-red-600">{uploadError}</div>
+                <div className="mt-3 text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
+                  {uploadError}
+                </div>
               )}
             </div>
-            {uploadError && (
-              <div className="text-red-600 text-sm">{uploadError}</div>
-            )}
             {uploading && (
-              <div className="flex items-center gap-2 text-blue-600">
-                <FaSpinner className="animate-spin" /> Uploading...
+              <div className="flex items-center gap-2 text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <FaSpinner className="animate-spin" /> Uploading file...
               </div>
             )}
           </div>
           <div className="flex space-x-3 mt-6">
             <button
               onClick={onClose}
-              className={`flex-1 py-2 px-4 rounded-lg border ${
+              className={`flex-1 py-2.5 px-4 rounded-lg border font-medium transition-colors ${
                 darkMode
                   ? "border-gray-600 text-gray-300 hover:bg-gray-700"
                   : "border-gray-300 text-gray-700 hover:bg-gray-50"
-              } transition-colors`}
+              }`}
               disabled={uploading}
             >
               Cancel
             </button>
             <button
               onClick={onAdd}
-              disabled={uploading}
-              className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg font-medium transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={uploading || !file}
+              className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2.5 px-4 rounded-lg font-medium transition-all hover:shadow-lg hover:shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               {uploading ? (
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-2 justify-center">
                   <FaSpinner className="animate-spin" /> Uploading...
                 </span>
               ) : (
-                "Add Item"
+                "Add File"
               )}
             </button>
           </div>

@@ -318,7 +318,7 @@ export default function TipTapRichTextEditor({
         </Button>
       </div>
 
-      <div className="p-2">
+      <div className="p-2 max-h-64 overflow-y-auto">
         <EditorContent editor={editor} />
       </div>
 

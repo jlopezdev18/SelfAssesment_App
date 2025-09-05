@@ -7,7 +7,6 @@ import {
   listAll,
   deleteObject,
 } from "firebase/storage";
-import { db, storage } from "../../../../../firebase/config";
 import {
   addDoc,
   collection,
@@ -15,9 +14,11 @@ import {
   doc,
   getDocs,
   updateDoc,
+  onSnapshot,
+  query,
 } from "firebase/firestore";
+import { db, storage } from "../../../../../firebase/config";
 import type { DownloadItem } from "../types/DownloadInterfaces";
-import Swal from "sweetalert2";
 import type { VersionFile } from "../../versioning/types/VersioningInterfaces";
 
 function formatBytes(bytes: number): string {
@@ -34,87 +35,107 @@ export function useDownloadManager() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
+  // Real-time Firestore listener for downloads
+  useEffect(() => {
+    const q = query(collection(db, "downloads"));
+    const unsub = onSnapshot(
+      q,
+      (snapshot) => {
+        // Set loading true before async fetch
+        setLoading(true);
+        (async () => {
+          const folders: DownloadItem["type"][] = [
+            "installers",
+            "updates",
+            "resources",
+            "documents",
+          ];
+          // Map Firestore docs by path for quick lookup
+          type FirestoreDownloadData = {
+            id: string;
+            name: string;
+            path: string;
+            type: DownloadItem["type"];
+            updated: string;
+            size: string;
+            hashes?: Array<{ algorithm: string; hash: string }>;
+            [key: string]: unknown;
+          };
+          const firestoreData: Record<string, FirestoreDownloadData> = {};
+          snapshot.docs.forEach((doc) => {
+            const data = doc.data() as FirestoreDownloadData;
+            firestoreData[data.path] = { ...data, id: doc.id };
+          });
+
+          // Fetch all storage items in parallel
+          const allItems = await Promise.all(
+            folders.map(async (folder) => {
+              const folderRef = ref(storage, `downloads/${folder}`);
+              const res = await listAll(folderRef);
+              // Fetch metadata and URLs in parallel for each file
+              const fileItems = await Promise.all(
+                res.items.map(async (itemRef) => {
+                  const path = `downloads/${folder}/${itemRef.name}`;
+                  const [url, metadata] = await Promise.all([
+                    getDownloadURL(itemRef),
+                    getMetadata(itemRef),
+                  ]);
+                  const firestoreItem = firestoreData[path];
+                  return {
+                    id: firestoreItem?.id || itemRef.name,
+                    name: itemRef.name,
+                    path,
+                    type: folder,
+                    size: formatBytes(metadata.size || 0),
+                    downloadUrl: url,
+                    updated: metadata.updated || new Date().toLocaleString(),
+                    ...(["installers", "updates"].includes(folder) &&
+                    firestoreItem?.hashes
+                      ? { hashes: firestoreItem.hashes }
+                      : {}),
+                  } as DownloadItem;
+                })
+              );
+              return fileItems;
+            })
+          );
+          // Flatten and sort by updated date desc
+          const flat = allItems.flat().sort((a, b) => {
+            const dateA = a.updated ? new Date(a.updated).getTime() : 0;
+            const dateB = b.updated ? new Date(b.updated).getTime() : 0;
+            return dateB - dateA;
+          });
+          setDownloads(flat);
+          setLoading(false);
+        })();
+      },
+      (error) => {
+        setLoading(false);
+        console.error("Error fetching files:", error);
+      }
+    );
+    return () => unsub();
+  }, []);
+
+  // For manual refresh (rarely needed now)
   const fetchDownloads = async () => {
     setLoading(true);
-    try {
-      const folders: DownloadItem["type"][] = [
-        "installers",
-        "updates",
-        "resources",
-        "documents",
-      ];
-      const items: DownloadItem[] = [];
-
-      // Get all documents from Firestore for hash data
-      const downloadDocs = await getDocs(collection(db, "downloads"));
-      type FirestoreDownloadData = {
-        id: string;
-        name: string;
-        path: string;
-        type: DownloadItem["type"];
-        updated: string;
-        size: string;
-        hashes?: Array<{ algorithm: string; hash: string }>;
-        [key: string]: unknown;
-      };
-
-      const firestoreData = downloadDocs.docs.reduce((acc: Record<string, FirestoreDownloadData>, doc) => {
-        const data = doc.data() as FirestoreDownloadData;
-        acc[data.path] = { ...data, id: doc.id };
-        return acc;
-      }, {} as Record<string, FirestoreDownloadData>);
-
-      // Get all items from Storage maintaining folder structure
-      for (const folder of folders) {
-        const folderRef = ref(storage, `downloads/${folder}`);
-        const res = await listAll(folderRef);
-
-        for (const itemRef of res.items) {
-          const path = `downloads/${folder}/${itemRef.name}`;
-          const url = await getDownloadURL(itemRef);
-          const metadata = await getMetadata(itemRef);
-
-          // Merge Storage data with Firestore data if available
-          const firestoreItem = firestoreData[path];
-
-          items.push({
-            id: firestoreItem?.id || itemRef.name, // Use Firestore ID if available
-            name: itemRef.name,
-            path: path,
-            type: folder,
-            size: formatBytes(metadata.size || 0),
-            downloadUrl: url,
-            updated: metadata.updated || new Date().toLocaleString(),
-            // Include hashes from Firestore if present and file type is installer/update
-            ...(["installers", "updates"].includes(folder) &&
-            firestoreItem?.hashes
-              ? { hashes: firestoreItem.hashes }
-              : {}),
-          } as DownloadItem);
-        }
-      }
-
-      setDownloads(items);
-    } catch (error) {
-      console.error("Error fetching files:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Failed to fetch files. Please try again.",
-      });
-    } finally {
-      setLoading(false);
-    }
+    // Just trigger the effect by toggling state
+    setLoading(false);
   };
 
   const addItem = async (
     newItem: DownloadItem,
     file: File | null,
-    resetForm: () => void
+    resetForm: () => void,
+    onSuccess?: () => void,
+    onError?: (error: string) => void
   ) => {
     setUploadError(null);
     if (!file) {
-      setUploadError("Please select a file.");
+      const error = "Please select a file.";
+      setUploadError(error);
+      onError?.(error);
       return;
     }
     setUploading(true);
@@ -122,7 +143,7 @@ export function useDownloadManager() {
       const path = `downloads/${newItem.type}/${file.name}`;
       const storageRef = ref(storage, path);
       await uploadBytes(storageRef, file);
-      const downloadUrl = await getDownloadURL(storageRef);
+      await getDownloadURL(storageRef); // value not used
       const metadata = await getMetadata(storageRef);
 
       const size = formatBytes(metadata.size || file.size || 0);
@@ -142,50 +163,27 @@ export function useDownloadManager() {
           : {}),
       };
       const docRef = await addDoc(collection(db, "downloads"), docData);
-
       await updateDoc(docRef, { id: docRef.id });
 
-      const itemToAdd = {
-        ...newItem,
-        id: docRef.id,
-        name: file.name,
-        size,
-        updated,
-        downloadUrl,
-        ...(newItem.type === "installers" || newItem.type === "updates"
-          ? { hashes: newItem.hashes || [] }
-          : {}),
-      };
-
-      setDownloads((prev) => [...prev, itemToAdd]);
-      Swal.fire({
-        icon: "success",
-        title: "File uploaded successfully",
-        text: `File ${file.name} has been uploaded successfully.`,
-      });
+      // Optimistic UI: don't wait for refetch, just call onSuccess/resetForm
+      onSuccess?.();
       resetForm();
-      await fetchDownloads();
+      // No need to call fetchDownloads, real-time listener will update
     } catch (err) {
-      setUploadError("Upload failed: " + (err as Error).message);
+      const errorMessage = "Upload failed: " + (err as Error).message;
+      setUploadError(errorMessage);
+      onError?.(errorMessage);
     } finally {
       setUploading(false);
     }
   };
 
-  const deleteItem = async (item: DownloadItem) => {
+  const deleteItem = async (
+    item: DownloadItem,
+    onSuccess?: () => void,
+    onError?: (error: string) => void
+  ) => {
     try {
-      const result = await Swal.fire({
-        title: "Are you sure?",
-        text: "You won't be able to revert this!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#d33",
-        cancelButtonColor: "#3085d6",
-        confirmButtonText: "Yes, delete it!",
-      });
-
-      if (!result.isConfirmed) return;
-
       setLoading(true);
 
       // Delete from Storage
@@ -203,7 +201,7 @@ export function useDownloadManager() {
 
         for (const versionDoc of versionsSnapshot.docs) {
           const versionData = versionDoc.data();
-          let wasModified = false;
+          // let wasModified = false;
 
           // Check and remove file from version's files array
           if (versionData.files) {
@@ -212,41 +210,20 @@ export function useDownloadManager() {
             );
 
             if (updatedFiles.length !== versionData.files.length) {
-              wasModified = true;
               // Update version document if files were modified
               await updateDoc(doc(db, "versions", versionDoc.id), {
                 files: updatedFiles,
               });
             }
           }
-
-          if (wasModified) {
-            console.log(
-              `Removed file reference from version: ${versionDoc.id}`
-            );
-          }
         }
       }
 
-      // Update local state
-      setDownloads((prev) =>
-        prev.filter((download) => download.id !== item.id)
-      );
-
-      await Swal.fire({
-        icon: "success",
-        title: "Deleted!",
-        text: `${item.name} has been deleted.`,
-        timer: 1500,
-        showConfirmButton: false,
-      });
+      // Optimistic UI: onSuccess immediately, real-time listener will update
+      onSuccess?.();
     } catch (error) {
       console.error("Error deleting file:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Failed to delete the file. Please try again.",
-      });
+      onError?.("Failed to delete the file. Please try again.");
     } finally {
       setLoading(false);
     }

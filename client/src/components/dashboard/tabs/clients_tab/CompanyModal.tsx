@@ -1,5 +1,5 @@
 import React from "react";
-import { FaBuilding, FaUser } from "react-icons/fa";
+import { Building, User } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +26,6 @@ interface CompanyModalProps {
   };
   errors: Record<string, string>;
   onChange: (field: keyof CompanyModalProps["form"], value: string) => void;
-  textClass: string;
   cardClass: string;
   loading: boolean;
   isEditing?: boolean;
@@ -40,7 +39,7 @@ const CompanyModal: React.FC<CompanyModalProps> = ({
   errors,
   onChange,
   loading,
-  isEditing
+  isEditing,
 }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,20 +51,20 @@ const CompanyModal: React.FC<CompanyModalProps> = ({
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FaBuilding className="h-5 w-5" />
+            <Building className="h-5 w-5" />
             {isEditing ? "Edit Company" : "Add New Company"}
           </DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Company Information */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <FaBuilding className="h-4 w-4 text-blue-500" />
+            <div className="flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400">
+              <Building className="h-4 w-4" />
               Company Information
             </div>
-            
-            <div className="grid grid-cols-1 gap-4">
+
+            <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="companyName">Company Name</Label>
                 <Input
@@ -76,10 +75,12 @@ const CompanyModal: React.FC<CompanyModalProps> = ({
                   className={errors.companyName ? "border-destructive" : ""}
                 />
                 {errors.companyName && (
-                  <p className="text-sm text-destructive">{errors.companyName}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.companyName}
+                  </p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="companyEmail">Company Email</Label>
                 <Input
@@ -90,7 +91,9 @@ const CompanyModal: React.FC<CompanyModalProps> = ({
                   className={errors.companyEmail ? "border-destructive" : ""}
                 />
                 {errors.companyEmail && (
-                  <p className="text-sm text-destructive">{errors.companyEmail}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.companyEmail}
+                  </p>
                 )}
               </div>
             </div>
@@ -100,68 +103,80 @@ const CompanyModal: React.FC<CompanyModalProps> = ({
 
           {/* Owner Information */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <FaUser className="h-4 w-4 text-green-500" />
+            <div className="flex items-center gap-2 text-sm font-medium text-green-600 dark:text-green-400">
+              <User className="h-4 w-4" />
               Owner Information
             </div>
-            
-            <div className="grid grid-cols-2 gap-4">
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    type="text"
+                    value={form.firstName}
+                    onChange={(e) => onChange("firstName", e.target.value)}
+                    className={errors.firstName ? "border-destructive" : ""}
+                  />
+                  {errors.firstName && (
+                    <p className="text-sm text-destructive">
+                      {errors.firstName}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    type="text"
+                    value={form.lastName}
+                    onChange={(e) => onChange("lastName", e.target.value)}
+                    className={errors.lastName ? "border-destructive" : ""}
+                  />
+                  {errors.lastName && (
+                    <p className="text-sm text-destructive">
+                      {errors.lastName}
+                    </p>
+                  )}
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
+                <Label htmlFor="ownerEmail">Owner Email</Label>
                 <Input
-                  id="firstName"
-                  type="text"
-                  value={form.firstName}
-                  onChange={(e) => onChange("firstName", e.target.value)}
-                  className={errors.firstName ? "border-destructive" : ""}
+                  id="ownerEmail"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => onChange("email", e.target.value)}
+                  className={errors.email ? "border-destructive" : ""}
                 />
-                {errors.firstName && (
-                  <p className="text-sm text-destructive">{errors.firstName}</p>
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email}</p>
                 )}
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  type="text"
-                  value={form.lastName}
-                  onChange={(e) => onChange("lastName", e.target.value)}
-                  className={errors.lastName ? "border-destructive" : ""}
-                />
-                {errors.lastName && (
-                  <p className="text-sm text-destructive">{errors.lastName}</p>
-                )}
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="ownerEmail">Owner Email</Label>
-              <Input
-                id="ownerEmail"
-                type="email"
-                value={form.email}
-                onChange={(e) => onChange("email", e.target.value)}
-                className={errors.email ? "border-destructive" : ""}
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email}</p>
-              )}
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+            >
               {loading ? (
                 <>
                   <ClipLoader color="currentColor" size={16} className="mr-2" />
                   {isEditing ? "Updating..." : "Creating..."}
                 </>
+              ) : isEditing ? (
+                "Update Company"
               ) : (
-                isEditing ? "Update Company" : "Create Company"
+                "Create Company"
               )}
             </Button>
           </DialogFooter>
