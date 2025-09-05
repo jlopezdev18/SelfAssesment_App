@@ -1,10 +1,11 @@
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
+import path from "path";
 import { formatRteHtmlForEmail } from "./rteSanitizer";
 
 dotenv.config();
 
-// Professional email template with embedded logo
+// Professional email template with embedded logo using CID
 const getEmailTemplate = (content: string) => `
 <!DOCTYPE html>
 <html lang="en">
@@ -30,9 +31,9 @@ const getEmailTemplate = (content: string) => `
                     <!-- Header -->
                     <tr>
                         <td style="background: linear-gradient(90deg, rgba(32, 174, 248, 1) 0%, rgba(10, 148, 255, 1) 54%, rgba(143, 207, 255, 1) 100%); padding: 40px 20px; text-align: center;">
-                            <!-- Logo using LogoEmail.jpg -->
+                            <!-- Logo using CID attachment -->
                             <div style="text-align: center; margin-bottom: 20px;">
-                                <img src="https://selfassesmentapp.netlify.app/assets/LogoEmail.jpg" 
+                                <img src="cid:logo" 
                                      alt="Self Assessment Logo" 
                                      style="width: 80px; height: 80px; border-radius: 50%; display: block; margin: 0 auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border: 3px solid white;" 
                                      width="80" 
@@ -133,6 +134,13 @@ export async function sendEmailToUser(email: string, password: string) {
     from: process.env.MAIL_USER!,
     subject: "🎉 Welcome to Self Assessment - Your Account is Ready!",
     html: getEmailTemplate(content),
+    attachments: [
+      {
+        filename: "LogoEmail.jpg",
+        path: path.join(__dirname, "../../public/assets/LogoEmail.jpg"),
+        cid: "logo",
+      },
+    ],
   };
 
   await transporter.sendMail(msg);
@@ -193,6 +201,13 @@ export async function sendReleaseEmailToAllUsers(
     from: process.env.MAIL_USER!,
     subject: `🚀 New Release: ${title}`,
     html: getEmailTemplate(content),
+    attachments: [
+      {
+        filename: "LogoEmail.jpg",
+        path: path.join(__dirname, "../../public/assets/LogoEmail.jpg"),
+        cid: "logo",
+      },
+    ],
   };
 
   await transporter.sendMail(msg);
@@ -252,6 +267,13 @@ export async function sendEmailToMainUser(email: string, password: string) {
     from: process.env.MAIL_USER!,
     subject: "🎉 Welcome to Self Assessment - Your Account is Ready!",
     html: getEmailTemplate(content),
+    attachments: [
+      {
+        filename: "LogoEmail.jpg",
+        path: path.join(__dirname, "../../public/assets/LogoEmail.jpg"),
+        cid: "logo",
+      },
+    ],
   };
 
   await transporter.sendMail(msg);
