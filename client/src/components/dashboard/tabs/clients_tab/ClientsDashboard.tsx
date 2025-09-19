@@ -17,7 +17,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 // Zod schemas for validation
 const companySchema = z.object({
@@ -54,7 +54,6 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [expandedCompanies, setExpandedCompanies] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [openCompanyModal, setOpenCompanyModal] = useState(false);
@@ -85,7 +84,7 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
     type: "company" | "user" | "bulk" | null;
-    id: string | string[]; // Single ID or array of IDs for bulk delete
+    id: string | string[];
     companyId?: string;
     title: string;
     description: string;
@@ -109,24 +108,31 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
     loading,
   } = useCompanies([]);
 
+  // Simple filtering without memoization
   const filteredCompanies = companies.filter((company) => {
-    const matchesSearch =
-      company.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      company.companyEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      company.owner?.firstName
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      company.owner?.lastName
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      company.companyName?.toLowerCase().includes(term) ||
+      company.companyEmail?.toLowerCase().includes(term) ||
+      company.owner?.firstName?.toLowerCase().includes(term) ||
+      company.owner?.lastName?.toLowerCase().includes(term) ||
       company.users?.some(
         (user) =>
-          user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    return matchesSearch;
+          user.firstName?.toLowerCase().includes(term) ||
+          user.lastName?.toLowerCase().includes(term) ||
+          user.email?.toLowerCase().includes(term)
+      )
+    );
   });
+
+  // Simple pagination without memoization
+  const maxPage = Math.max(0, Math.ceil(filteredCompanies.length / rowsPerPage) - 1);
+  const currentPage = Math.min(page, maxPage);
+  const paginatedCompanies = filteredCompanies.slice(
+    currentPage * rowsPerPage,
+    currentPage * rowsPerPage + rowsPerPage
+  );
 
   const handleSelectCompany = (companyId: string) => {
     setSelectedCompanies((prev) =>
@@ -280,14 +286,7 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
           newCompanyForm,
           () => {
             handleCloseCompanyModal();
-            toast("Company updated successfully", {
-              style: {
-                background: "#059669",
-                color: "white",
-                border: "1px solid #059669",
-              },
-              duration: 4000,
-            });
+            toast.success("Company updated successfully");
           },
           () => {}
         );
@@ -297,14 +296,7 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
         newCompanyForm,
         () => {
           handleCloseCompanyModal();
-          toast("Company created successfully", {
-            style: {
-              background: "#059669",
-              color: "white",
-              border: "1px solid #059669",
-            },
-            duration: 4000,
-          });
+          toast.success("Company created successfully");
         },
         () => {}
       );
@@ -324,9 +316,7 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
   };
 
   const handleNotifyCompany = (companyId: string) => {
-    // Placeholder notification function
     console.log(`Notification sent to company ${companyId}`);
-    // You can add your notification logic here
   };
 
   const handleUserSubmit = async () => {
@@ -338,14 +328,7 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
         newUserForm,
         () => {
           handleCloseUserModal();
-          toast("User updated successfully", {
-            style: {
-              background: "#059669",
-              color: "white",
-              border: "1px solid #059669",
-            },
-            duration: 4000,
-          });
+          toast.success("User updated successfully");
         },
         () => {}
       );
@@ -355,14 +338,7 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
         newUserForm,
         () => {
           handleCloseUserModal();
-          toast("User added successfully", {
-            style: {
-              background: "#059669",
-              color: "white",
-              border: "1px solid #059669",
-            },
-            duration: 4000,
-          });
+          toast.success("User added successfully");
         },
         () => {}
       );
@@ -427,65 +403,42 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
     });
   };
 
-  const handleConfirmDelete = () => {
-    if (
-      deleteDialog.type === "company" &&
-      typeof deleteDialog.id === "string"
-    ) {
-      deleteCompany(deleteDialog.id, () => {
-        toast("Company deleted successfully", {
-          style: {
-            background: "#dc2626",
-            color: "white",
-            border: "1px solid #dc2626",
-          },
-          duration: 4000,
-        });
-      });
-    } else if (deleteDialog.type === "bulk" && Array.isArray(deleteDialog.id)) {
-      deleteDialog.id.forEach((companyId) => {
-        deleteCompany(companyId, () => {
-          toast("Company deleted successfully", {
-            style: {
-              background: "#dc2626",
-              color: "white",
-              border: "1px solid #dc2626",
-            },
-            duration: 4000,
-          });
-        });
-      });
-      setSelectedCompanies([]);
-    } else if (
-      deleteDialog.type === "user" &&
-      typeof deleteDialog.id === "string" &&
-      deleteDialog.companyId
-    ) {
-      deleteUser(deleteDialog.id, deleteDialog.companyId);
-      toast("User deleted successfully", {
-        style: {
-          background: "#dc2626",
-          color: "white",
-          border: "1px solid #dc2626",
-        },
-        duration: 4000,
-      });
-    }
-
-    setDeleteDialog({
-      open: false,
-      type: null,
-      id: "",
-      companyId: "",
-      title: "",
-      description: "",
-    });
+  const handleCancelDelete = () => {
+    setDeleteDialog(prev => ({ ...prev, open: false }));
   };
 
-  const paginatedCompanies = filteredCompanies.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
+  const handleConfirmDelete = async () => {
+    try {
+      if (deleteDialog.type === "company" && typeof deleteDialog.id === "string") {
+        await deleteCompany(deleteDialog.id);
+        toast.success("Company deleted successfully");
+        // Only clean up selectedCompanies if the deleted company was actually selected
+        if (selectedCompanies.includes(deleteDialog.id as string)) {
+          setSelectedCompanies(prev => prev.filter(id => id !== deleteDialog.id));
+        }
+      } else if (deleteDialog.type === "bulk" && Array.isArray(deleteDialog.id)) {
+        await Promise.all(
+          deleteDialog.id.map(async (companyId) => {
+            await deleteCompany(companyId);
+          })
+        );
+        toast.success(`${deleteDialog.id.length} companies deleted successfully`);
+        setSelectedCompanies([]);
+      } else if (
+        deleteDialog.type === "user" &&
+        typeof deleteDialog.id === "string" &&
+        deleteDialog.companyId
+      ) {
+        await deleteUser(deleteDialog.id, deleteDialog.companyId);
+        toast.success("User deleted successfully");
+      }
+    } catch (error) {
+      console.error("Delete operation failed:", error);
+      toast.error("Delete operation failed. Please try again.");
+    }
+
+    handleCancelDelete();
+  };
 
   return (
     <div
@@ -566,12 +519,10 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
             companies={paginatedCompanies}
             selectedCompanies={selectedCompanies}
             expandedCompanies={expandedCompanies}
-            activeDropdown={activeDropdown}
             onSelectCompany={handleSelectCompany}
             onSelectAll={handleSelectAllClick}
             onToggleExpand={toggleCompanyExpansion}
             onOpenUserModal={handleOpenUserModal}
-            onDropdown={setActiveDropdown}
             onEditCompany={handleEditCompany}
             onNotifyCompany={handleNotifyCompany}
             onDeleteCompany={handleDeleteCompany}
@@ -583,7 +534,7 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
             cardClass={cardClass}
             mutedTextClass={mutedTextClass}
             darkMode={darkMode}
-            page={page}
+            page={currentPage}
             rowsPerPage={rowsPerPage}
             totalCompanies={filteredCompanies.length}
             onPageChange={setPage}
@@ -624,51 +575,21 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
       />
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog
-        open={deleteDialog.open}
-        onOpenChange={(open) => {
-          if (!open) {
-            setDeleteDialog({
-              open: false,
-              type: null,
-              id: "",
-              companyId: "",
-              title: "",
-              description: "",
-            });
-          }
-        }}
-      >
-        <AlertDialogContent className="z-[9999] bg-white">
+      <AlertDialog open={deleteDialog.open}>
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-black">
-              {deleteDialog.title}
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-600">
+            <AlertDialogTitle>{deleteDialog.title}</AlertDialogTitle>
+            <AlertDialogDescription className="whitespace-pre-line">
               {deleteDialog.description}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel
-              className="bg-gray-100 text-black border border-gray-300"
-              onClick={() => {
-                setDeleteDialog({
-                  open: false,
-                  type: null,
-                  id: "",
-                  companyId: "",
-                  title: "",
-                  description: "",
-                });
-              }}
-            >
+            <AlertDialogCancel onClick={handleCancelDelete}>
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
-                handleConfirmDelete();
-              }}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete
             </AlertDialogAction>

@@ -4,6 +4,31 @@ import admin from "../firebase"; // your firebase-admin init
 const db = admin.firestore();
 const versionRef = db.collection("versions");
 
+// 📤 GET all versions
+export const getAllVersions = async (_req: Request, res: Response): Promise<any> => {
+  try {
+    const snapshot = await admin
+      .firestore()
+      .collection("versions")
+      .orderBy("releaseDate", "desc")
+      .get();
+
+    if (snapshot.empty) {
+      return res.status(200).json([]);
+    }
+
+    const versions = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    res.status(200).json(versions);
+  } catch (err) {
+    console.error("Error fetching all versions:", err);
+    res.status(500).json({ error: "Error fetching all versions" });
+  }
+};
+
 // 📤 GET latest version
 export const getLatestVersion = async (_req: Request, res: Response): Promise<any> => {
   try {

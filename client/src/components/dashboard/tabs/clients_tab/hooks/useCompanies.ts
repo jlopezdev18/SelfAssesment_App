@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import type {
   Company,
   NewCompanyForm,
@@ -12,7 +12,9 @@ export function useCompanies(initialCompanies: Company[]) {
   const [companies, setCompanies] = useState<Company[]>(initialCompanies);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const fetchCompanies = async () => {
+
+
+  const fetchCompanies = useCallback(async () => {
     setLoading(true);
     try {
       const response = await axios.get(`${API_URL}/api/company/companies`);
@@ -44,7 +46,7 @@ export function useCompanies(initialCompanies: Company[]) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchCompanies();
@@ -57,14 +59,16 @@ export function useCompanies(initialCompanies: Company[]) {
   ) => {
     setLoading(true);
     try {
-      const response = await axios.post(
+      await axios.post(
         `${API_URL}/api/company/create-company`,
         form
       );
-      setCompanies((prev) => [...prev, response.data as Company]);
+
+      // Fetch fresh data to ensure proper formatting
+      await fetchCompanies();
       onSuccess();
-      fetchCompanies(); // Refresh the list of companies
-    } catch {
+    } catch (error) {
+      console.error("Error creating company:", error);
       onError();
     } finally {
       setLoading(false);
@@ -91,7 +95,6 @@ export function useCompanies(initialCompanies: Company[]) {
         )
       );
       onSuccess();
-      fetchCompanies(); // Refresh the list of companies
     } catch {
       onError();
     } finally {
@@ -138,7 +141,6 @@ export function useCompanies(initialCompanies: Company[]) {
         })
       );
       onSuccess();
-      await fetchCompanies();
     }
   } catch {
     onError();
@@ -166,18 +168,17 @@ const deleteUser = async (userId: string, companyId: string) => {
           return company;
         })
       );
-
-      await fetchCompanies();
     }
-  } catch {
-    // Error handling will be done in the component
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    throw error;
   } finally {
     setLoading(false);
   }
 };
  
 
- const deleteCompany = async (companyId: string, onError: () => void) => {
+const deleteCompany = async (companyId: string, onSuccess?: () => void) => {
   setLoading(true);
   try {
     const response = await axios.delete(
@@ -190,17 +191,14 @@ const deleteUser = async (userId: string, companyId: string) => {
     );
 
     if (response.status === 200) {
-      setCompanies((prev) =>
-        prev.map((company) => 
-          company.id === companyId 
-            ? { ...company, active: false, deleted: true }
-            : company
-        )
-      );
-      await fetchCompanies();
+      setCompanies((prev) => prev.filter((company) => company.id !== companyId));
+      if (onSuccess) {
+        onSuccess();
+      }
     }
-  } catch  {
-    onError();
+  } catch (error) {
+    console.error("Error deleting company:", error);
+    throw error;
   } finally {
     setLoading(false);
   }
@@ -241,7 +239,6 @@ const updateCompany = async (
         )
       );
       onSuccess();
-      await fetchCompanies(); // Refresh the list
     }
   } catch {
     onError();

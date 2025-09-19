@@ -4,10 +4,12 @@ import {
   updateVersion,
   deleteVersion,
   getLatestVersion,
+  getAllVersions,
 } from "../controllers/versionController";
 
 const router = express.Router();
 
+router.get("/", getAllVersions);
 router.get("/latest", getLatestVersion);
 router.post("/", createVersion);
 router.put("/:id", updateVersion);

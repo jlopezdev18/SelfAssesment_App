@@ -24,11 +24,12 @@ import {
 } from "@/components/ui/tooltip";
 import { NavItem } from "./NavItem";
 import { useNavigate } from "react-router";
+import { SimpleThemeToggle } from "@/components/ui/theme-toggle";
+import { useTheme } from "@/contexts/ThemeContext";
+
 interface SidebarProps {
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (collapsed: boolean) => void;
-  darkMode: boolean;
-  setDarkMode: (mode: boolean) => void;
   mutedTextClass: string;
   textClass: string;
   sidebarClass: string;
@@ -37,11 +38,11 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({
   sidebarCollapsed,
   setSidebarCollapsed,
-  darkMode,
   mutedTextClass,
   textClass,
   sidebarClass,
 }) => {
+  const { isDarkMode } = useTheme();
   const { isAdmin } = useIsAdmin();
   const [user] = useAuthState(auth);
   const navigate = useNavigate();
@@ -133,7 +134,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             label="Dashboard"
             path="/dashboard/main"
             sidebarCollapsed={sidebarCollapsed}
-            darkMode={darkMode}
+            darkMode={isDarkMode}
           />
 
           <NavItem
@@ -141,7 +142,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             label="Versioning"
             path="/dashboard/versioning"
             sidebarCollapsed={sidebarCollapsed}
-            darkMode={darkMode}
+            darkMode={isDarkMode}
           />
 
           <NavItem
@@ -149,7 +150,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             label="Downloads"
             path="/dashboard/downloads"
             sidebarCollapsed={sidebarCollapsed}
-            darkMode={darkMode}
+            darkMode={isDarkMode}
           />
 
           {isAdmin && (
@@ -160,15 +161,36 @@ const Sidebar: React.FC<SidebarProps> = ({
                 label="Clients"
                 path="/dashboard/clients"
                 sidebarCollapsed={sidebarCollapsed}
-                darkMode={darkMode}
+                darkMode={isDarkMode}
               />
             </>
           )}
         </nav>
       </div>
 
-      {/* Bottom section - Logout */}
+      {/* Bottom section - Theme Toggle & Logout */}
       <div className="p-6">
+        <div className="mb-4 flex justify-center">
+          {sidebarCollapsed ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <SimpleThemeToggle />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Toggle theme</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : (
+            <div className="flex items-center justify-between w-full">
+              <span className={`text-sm font-medium ${textClass}`}>Theme</span>
+              <SimpleThemeToggle />
+            </div>
+          )}
+        </div>
         <Separator className="mb-4" />
         {sidebarCollapsed ? (
           <TooltipProvider>

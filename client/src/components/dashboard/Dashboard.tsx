@@ -11,12 +11,12 @@ import {
 } from "./tabs";
 import { FaDownload, FaFileAlt, FaCog } from "react-icons/fa";
 import { useIsAdmin } from "../../hooks/useIsAdmin";
+import { useThemeStyles } from "@/contexts/ThemeContext";
 
 const Dashboard: React.FC = () => {
-  const [darkMode, setDarkMode] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
   const { isAdmin } = useIsAdmin();
+  const { bgClass, cardClass, sidebarClass, textClass, mutedTextClass, isDarkMode } = useThemeStyles();
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -31,24 +31,12 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const bgClass = darkMode
-    ? "bg-gray-900"
-    : "bg-gradient-to-br from-blue-50 to-indigo-100";
-  const cardClass = darkMode ? "bg-gray-800 text-white" : "bg-white";
-  const sidebarClass = darkMode
-    ? "bg-gray-800 border-gray-700"
-    : "bg-white border-gray-100";
-  const textClass = darkMode ? "text-white" : "text-gray-800";
-  const mutedTextClass = darkMode ? "text-gray-400" : "text-gray-500";
-
   return (
     <div className={`min-h-screen ${bgClass} transition-colors duration-300`}>
       <div className="flex h-screen">
         <Sidebar
           sidebarCollapsed={sidebarCollapsed}
           setSidebarCollapsed={setSidebarCollapsed}
-          darkMode={darkMode}
-          setDarkMode={setDarkMode}
           mutedTextClass={mutedTextClass}
           textClass={textClass}
           sidebarClass={sidebarClass}
@@ -60,7 +48,7 @@ const Dashboard: React.FC = () => {
               path="/main"
               element={
                 <DashboardMain
-                  darkMode={darkMode}
+                  darkMode={isDarkMode}
                   cardClass={cardClass}
                   textClass={textClass}
                   mutedTextClass={mutedTextClass}
@@ -74,7 +62,7 @@ const Dashboard: React.FC = () => {
                   cardClass={cardClass}
                   textClass={textClass}
                   mutedTextClass={mutedTextClass}
-                  darkMode={darkMode}
+                  darkMode={isDarkMode}
                   getTypeIcon={getTypeIcon}
                 />
               }
@@ -86,14 +74,14 @@ const Dashboard: React.FC = () => {
                   cardClass={cardClass}
                   textClass={textClass}
                   mutedTextClass={mutedTextClass}
-                  darkMode={darkMode}
+                  darkMode={isDarkMode}
                   isAdmin={isAdmin}
                 />
               }
             />
             <Route
               path="/settings"
-              element={<Settings darkMode={darkMode} />}
+              element={<Settings darkMode={isDarkMode} />}
             />
             <Route
               path="/clients"
@@ -101,7 +89,7 @@ const Dashboard: React.FC = () => {
                 <ClientsDashboard
                   cardClass={cardClass}
                   mutedTextClass={mutedTextClass}
-                  darkMode={darkMode}
+                  darkMode={isDarkMode}
                 />
               }
             />

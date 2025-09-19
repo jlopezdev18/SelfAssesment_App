@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   FaBuilding,
   FaUser,
@@ -21,24 +22,16 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import type { Company, User } from "./types/ClientsInterfaces";
 
 interface CompanyTableProps {
   companies: Company[];
   selectedCompanies: string[];
   expandedCompanies: string[];
-  activeDropdown: string | null;
   onSelectCompany: (id: string) => void;
   onSelectAll: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onToggleExpand: (id: string) => void;
   onOpenUserModal: (companyId: string) => void;
-  onDropdown: (id: string | null) => void;
   onEditCompany: (company: Company) => void;
   onDeleteCompany: (companyId: string) => void;
   onNotifyCompany: (companyId: string) => void;
@@ -82,6 +75,145 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
   onPageChange,
   onRowsPerPageChange,
 }) => {
+  type MenuState =
+    | {
+        id: string;
+        type: "company";
+        top: number;
+        left: number;
+        company: Company;
+      }
+    | {
+        id: string;
+        type: "user";
+        top: number;
+        left: number;
+        companyId: string;
+        user: User;
+      }
+    | null;
+
+  const [menu, setMenu] = useState<MenuState>(null);
+
+  const openMenu = (
+    e: React.MouseEvent,
+    id: string,
+    type: "company" | "user",
+    payload: Company | { companyId: string; user: User }
+  ) => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const menuWidth = 220; // approximate width
+    const menuHeight = 140; // approximate height
+    let left = Math.min(
+      rect.right - menuWidth,
+      window.innerWidth - menuWidth - 8
+    );
+    left = Math.max(8, left);
+    let top = rect.bottom + 8;
+    if (top + menuHeight > window.innerHeight) {
+      top = Math.max(8, rect.top - menuHeight - 8);
+    }
+
+    if (type === "company") {
+      setMenu({ id, type, top, left, company: payload as Company });
+    } else {
+      const { companyId, user } = payload as { companyId: string; user: User };
+      setMenu({ id, type, top, left, companyId, user });
+    }
+  };
+
+  const MenuPortal: React.FC<{
+    menu: NonNullable<MenuState>;
+    onClose: () => void;
+  }> = ({ menu, onClose }) => {
+    const menuRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+      const onKey = (e: KeyboardEvent) => {
+        if (e.key === "Escape") onClose();
+      };
+      document.addEventListener("keydown", onKey);
+      return () => document.removeEventListener("keydown", onKey);
+    }, [onClose]);
+
+    useEffect(() => {
+      const onMouseDown = (e: MouseEvent) => {
+        if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+          onClose();
+        }
+      };
+      document.addEventListener("mousedown", onMouseDown);
+      return () => document.removeEventListener("mousedown", onMouseDown);
+    }, [onClose]);
+
+    const content = (
+      <>
+        <div
+          className="fixed z-[999] min-w-[12rem] rounded-md border bg-popover p-1 text-popover-foreground shadow-lg"
+          style={{ top: menu.top, left: menu.left }}
+          ref={menuRef}
+        >
+          {menu.type === "company" ? (
+            <>
+              <button
+                className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                onClick={() => {
+                  onEditCompany(menu.company);
+                  onClose();
+                }}
+              >
+                <FaEdit className="w-4 h-4 mr-2" />
+                Edit Company
+              </button>
+              <button
+                className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                onClick={() => {
+                  onNotifyCompany(menu.company.id);
+                  onClose();
+                }}
+              >
+                <FaBell className="w-4 h-4 mr-2" />
+                Notification
+              </button>
+              <button
+                className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground text-destructive"
+                onClick={() => {
+                  onDeleteCompany(menu.company.id);
+                  onClose();
+                }}
+              >
+                <FaTrash className="w-4 h-4 mr-2" />
+                Delete Company
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                onClick={() => {
+                  onEditUser(menu.user, menu.companyId);
+                  onClose();
+                }}
+              >
+                <FaEdit className="w-4 h-4 mr-2" />
+                Edit User
+              </button>
+              <button
+                className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground text-destructive"
+                onClick={() => {
+                  onDeleteUser(menu.user.id, menu.companyId);
+                  onClose();
+                }}
+              >
+                <FaTrash className="w-4 h-4 mr-2" />
+                Delete User
+              </button>
+            </>
+          )}
+        </div>
+      </>
+    );
+    return createPortal(content, document.body);
+  };
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
@@ -123,7 +255,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
 
   return (
     <div className={`${cardClass} border overflow-hidden`}>
-      <Table>
+      <Table className="relative">
         <TableHeader>
           <TableRow
             className={darkMode ? "border-gray-700" : "border-gray-200"}
@@ -212,7 +344,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
                   </TableCell>
                   <TableCell></TableCell>
                   <TableCell></TableCell>
-                  <TableCell className="text-center">
+                  <TableCell className="text-center relative">
                     <div className="flex items-center justify-center gap-1">
                       <Button
                         variant="ghost"
@@ -222,39 +354,21 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
                       >
                         <FaUserPlus className="w-4 h-4" />
                       </Button>
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                          >
-                            <SlOptionsVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => onEditCompany(company)}
-                          >
-                            <FaEdit className="w-4 h-4 mr-2" />
-                            Edit Company
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => onNotifyCompany(company.id)}
-                          >
-                            <FaBell className="w-4 h-4 mr-2" />
-                            Notification
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => onDeleteCompany(company.id)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <FaTrash className="w-4 h-4 mr-2" />
-                            Delete Company
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={(e) =>
+                          openMenu(
+                            e,
+                            `company-${company.id}`,
+                            "company",
+                            company
+                          )
+                        }
+                      >
+                        <SlOptionsVertical className="w-4 h-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -342,35 +456,25 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
                         <TableCell className="text-sm">
                           {formatDate(user.createdAt)}
                         </TableCell>
-                        <TableCell className="text-center">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                              >
-                                <SlOptionsVertical className="w-3 h-3" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => onEditUser(user, company.id)}
-                              >
-                                <FaEdit className="w-4 h-4 mr-2" />
-                                Edit User
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  onDeleteUser(user.id, company.id)
+                        <TableCell className="text-center relative">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={(e) =>
+                              openMenu(
+                                e,
+                                `user-${company.id}-${user.id}`,
+                                "user",
+                                {
+                                  companyId: company.id,
+                                  user,
                                 }
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <FaTrash className="w-4 h-4 mr-2" />
-                                Delete User
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                              )
+                            }
+                          >
+                            <SlOptionsVertical className="w-3 h-3" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -448,6 +552,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
           </div>
         </div>
       </div>
+      {menu && <MenuPortal menu={menu} onClose={() => setMenu(null)} />}
     </div>
   );
 };

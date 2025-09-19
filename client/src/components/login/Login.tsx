@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { SimpleThemeToggle } from "@/components/ui/theme-toggle";
 import { toast } from "sonner";
 import Logo from "/assets/Logo.svg";
 import { loginWithEmail } from "../../firebase/auth";
@@ -69,13 +70,11 @@ export default function Login({
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8"
-      style={{
-        background:
-          "linear-gradient(90deg, rgba(32, 174, 248, 1) 0%, rgba(10, 148, 255, 1) 54%, rgba(143, 207, 255, 1) 100%)",
-      }}
-    >
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 dark:from-gray-800 dark:via-gray-900 dark:to-black transition-colors duration-300">
+      {/* Theme Toggle */}
+      <div className="absolute top-4 right-4">
+        <SimpleThemeToggle />
+      </div>
       <div className="w-full max-w-md space-y-8">
         {/* Logo and Header */}
         <div className="text-center space-y-4">
@@ -87,17 +86,17 @@ export default function Login({
             />
           </div>
           <div className="space-y-2">
-            <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-50 via-white to-blue-100 drop-shadow-lg">
+            <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-50 via-white to-blue-100 dark:from-gray-100 dark:via-white dark:to-gray-200 drop-shadow-lg">
               Welcome back
             </h1>
-            <p className="text-sm text-blue-100">
+            <p className="text-sm text-blue-100 dark:text-gray-300">
               Enter your credentials to access your account
             </p>
           </div>
         </div>
 
         {/* Login Card */}
-        <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
+        <Card className="shadow-xl border-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm">
           <CardContent className="px-8 pt-8 pb-10 space-y-6">
             {/* Error Alert */}
             {error && (

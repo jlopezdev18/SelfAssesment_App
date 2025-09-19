@@ -9,11 +9,23 @@ import {
   FaDownload,
   FaEdit,
   FaFileAlt,
+  FaTrash,
 } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import VersionForm from "./VersionForm";
 import type { VersioningProps } from "./types/VersioningInterfaces";
-import { useLatestVersion } from "./hooks/useLatestVersion";
+import { useAllVersions } from "./hooks/useAllVersions";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { storage } from "../../../../firebase/config";
 import { toast } from "sonner";
@@ -36,11 +48,14 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
   isAdmin,
 }) => {
   const {
-    data: versionData,
+    data: allVersions,
     loading,
     addVersion,
     updateVersion,
-  } = useLatestVersion();
+    deleteVersion,
+  } = useAllVersions();
+
+  const latestVersion = allVersions.length > 0 ? allVersions[0] : null;
   const [copiedHash, setCopiedHash] = useState("");
   const [expandedFile, setExpandedFile] = useState<string | null>(null);
   const [formMode, setFormMode] = useState<"none" | "add" | "edit">("none");
@@ -50,19 +65,24 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
     null
   );
 
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
+  const selectedVersion = selectedVersionId
+    ? allVersions.find(v => v.id === selectedVersionId) || latestVersion
+    : latestVersion;
+
   // Local files state to avoid losing focus on edit
   const [files, setFiles] = useState<FileProps[]>([]);
   useEffect(() => {
-    if (versionData?.files) {
+    if (selectedVersion?.files) {
       setFiles(
-        versionData.files.map((file) => ({
+        selectedVersion.files.map((file) => ({
           ...file,
           type: file.type === "installer" ? "installer" : "update",
           downloadId: file.downloadId ?? "",
         }))
       );
     }
-  }, [versionData]);
+  }, [selectedVersion]);
 
   // Unified form state for version and files
   const [formData, setFormData] = useState({
@@ -100,85 +120,85 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
 
   // Fill formData with current version info when editing
   useEffect(() => {
-    if (formMode === "edit" && versionData) {
+    if (formMode === "edit" && selectedVersion) {
       setFormData({
-        version: versionData.version,
-        releaseDate: versionData.releaseDate,
-        releaseType: versionData.releaseType,
-        description: versionData.description,
+        version: selectedVersion.version,
+        releaseDate: selectedVersion.releaseDate,
+        releaseType: selectedVersion.releaseType,
+        description: selectedVersion.description,
         files: {
           installer: {
             filename:
-              versionData.files.find((f) => f.type === "installer")?.filename ||
+              selectedVersion.files.find((f) => f.type === "installer")?.filename ||
               "",
             type: "installer",
             size:
-              versionData.files.find((f) => f.type === "installer")?.size || "",
+              selectedVersion.files.find((f) => f.type === "installer")?.size || "",
             downloadUrl:
-              versionData.files.find((f) => f.type === "installer")
+              selectedVersion.files.find((f) => f.type === "installer")
                 ?.downloadUrl || "",
             hashes: [
               {
                 algorithm: "SHA512",
                 hash:
-                  versionData.files.find((f) => f.type === "installer")
+                  selectedVersion.files.find((f) => f.type === "installer")
                     ?.hashes[0]?.hash || "",
               },
               {
                 algorithm: "SHA384",
                 hash:
-                  versionData.files.find((f) => f.type === "installer")
+                  selectedVersion.files.find((f) => f.type === "installer")
                     ?.hashes[1]?.hash || "",
               },
               {
                 algorithm: "SHA256",
                 hash:
-                  versionData.files.find((f) => f.type === "installer")
+                  selectedVersion.files.find((f) => f.type === "installer")
                     ?.hashes[2]?.hash || "",
               },
             ],
             downloadId:
-              versionData.files.find((f) => f.type === "installer")
+              selectedVersion.files.find((f) => f.type === "installer")
                 ?.downloadId || "",
           },
           update: {
             filename:
-              versionData.files.find((f) => f.type === "update")?.filename ||
+              selectedVersion.files.find((f) => f.type === "update")?.filename ||
               "",
             type: "update",
             size:
-              versionData.files.find((f) => f.type === "update")?.size || "",
+              selectedVersion.files.find((f) => f.type === "update")?.size || "",
             downloadUrl:
-              versionData.files.find((f) => f.type === "update")?.downloadUrl ||
+              selectedVersion.files.find((f) => f.type === "update")?.downloadUrl ||
               "",
             hashes: [
               {
                 algorithm: "SHA512",
                 hash:
-                  versionData.files.find((f) => f.type === "update")?.hashes[0]
+                  selectedVersion.files.find((f) => f.type === "update")?.hashes[0]
                     ?.hash || "",
               },
               {
                 algorithm: "SHA384",
                 hash:
-                  versionData.files.find((f) => f.type === "update")?.hashes[1]
+                  selectedVersion.files.find((f) => f.type === "update")?.hashes[1]
                     ?.hash || "",
               },
               {
                 algorithm: "SHA256",
                 hash:
-                  versionData.files.find((f) => f.type === "update")?.hashes[2]
+                  selectedVersion.files.find((f) => f.type === "update")?.hashes[2]
                     ?.hash || "",
               },
             ],
             downloadId:
-              versionData.files.find((f) => f.type === "update")?.downloadId ||
+              selectedVersion.files.find((f) => f.type === "update")?.downloadId ||
               "",
           },
         },
       });
     }
-  }, [formMode, versionData]);
+  }, [formMode, selectedVersion]);
 
   // Reset formData when switching to "add" mode
   useEffect(() => {
@@ -413,7 +433,7 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
         files: filesToUpdate,
       };
 
-      await updateVersion(versionData?.id, dataToSubmit);
+      await updateVersion(selectedVersion?.id, dataToSubmit);
 
       // Limpiar estado de selección de archivos y cerrar el formulario
       setSelectedInstallerFile(null);
@@ -430,6 +450,29 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
       });
     } catch {
       toast.error("Error al actualizar la versión, intenta de nuevo");
+    }
+  };
+
+  // --- DELETE VERSION ---
+  const handleDeleteVersion = async () => {
+    if (!selectedVersion?.id) {
+      toast.error("No version selected for deletion");
+      return;
+    }
+
+    try {
+      await deleteVersion(selectedVersion.id);
+      toast.success("Version deleted successfully! 🗑️", {
+        style: {
+          background: "#ef4444",
+          color: "white",
+          border: "1px solid #dc2626",
+        },
+        duration: 4000,
+      });
+    } catch (error) {
+      toast.error("Failed to delete version. Please try again.");
+      console.error("Delete error:", error);
     }
   };
 
@@ -575,9 +618,71 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
               <FaEdit className="w-4 h-4 mr-2" />
               Edit Version
             </Button>
+            {selectedVersion && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+                    size="lg"
+                  >
+                    <FaTrash className="w-4 h-4 mr-2" />
+                    Delete Version
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Version</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete version {selectedVersion.version}?
+                      This action cannot be undone and will also remove all associated
+                      installer and update files from the Downloads section.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteVersion}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         )}
       </div>
+
+      {/* Version Selector */}
+      {allVersions.length > 1 && (
+        <div
+          className={`${cardClass} p-4 rounded-xl shadow-sm border ${
+            darkMode ? "border-gray-700" : "border-gray-100"
+          } mb-6`}
+        >
+          <div className="flex items-center space-x-4">
+            <label className={`font-medium ${textClass}`}>Select Version:</label>
+            <select
+              value={selectedVersionId || ""}
+              onChange={(e) => setSelectedVersionId(e.target.value || null)}
+              className={`px-3 py-2 rounded-md border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                darkMode
+                  ? "bg-gray-700 border-gray-600 text-white"
+                  : "bg-white border-gray-300 text-gray-900"
+              }`}
+            >
+              {allVersions.map((version, index) => (
+                <option key={version.id} value={version.id}>
+                  v{version.version} ({version.releaseType}) - {version.releaseDate}
+                  {index === 0 ? " (Latest)" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
 
       {/* Version Header */}
       <div
@@ -598,31 +703,41 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
             </div>
             <div>
               <h2 className={`text-3xl font-bold ${textClass}`}>
-                Version {versionData?.version}
+                Version {selectedVersion?.version}
               </h2>
               <p className={`${mutedTextClass} text-sm`}>
-                {versionData?.releaseType}
+                {selectedVersion?.releaseType}
               </p>
             </div>
           </div>
           <div className="flex items-center space-x-4">
             <div
               className={`px-3 py-1 rounded-full text-sm font-medium ${
-                darkMode
-                  ? "bg-green-900 text-green-300"
-                  : "bg-green-100 text-green-700"
+                selectedVersion?.releaseType === "stable"
+                  ? darkMode
+                    ? "bg-green-900 text-green-300"
+                    : "bg-green-100 text-green-700"
+                  : selectedVersion?.releaseType === "beta"
+                  ? darkMode
+                    ? "bg-yellow-900 text-yellow-300"
+                    : "bg-yellow-100 text-yellow-700"
+                  : darkMode
+                  ? "bg-red-900 text-red-300"
+                  : "bg-red-100 text-red-700"
               }`}
             >
-              Stable
+              {selectedVersion?.releaseType
+                ? selectedVersion.releaseType.charAt(0).toUpperCase() + selectedVersion.releaseType.slice(1)
+                : "Unknown"}
             </div>
             <div className="flex items-center space-x-2 text-sm">
               <FaCalendarAlt className={mutedTextClass} />
-              <span className={mutedTextClass}>{versionData?.releaseDate}</span>
+              <span className={mutedTextClass}>{selectedVersion?.releaseDate}</span>
             </div>
           </div>
         </div>
         <p className={`${mutedTextClass} text-sm`}>
-          {versionData?.description}
+          {selectedVersion?.description}
         </p>
       </div>
 
