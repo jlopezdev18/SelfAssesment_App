@@ -12,8 +12,8 @@ export function useIsAdmin() {
 
     const resolveIsAdmin = async (user: User) => {
       try {
-        // Fuerza refresh para traer claims actuales después de hard refresh/clear cache
-        const idTokenResult = await user.getIdTokenResult(true);
+        // Use cached token first for faster load - only force refresh if needed
+        const idTokenResult = await user.getIdTokenResult(false);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const claims: any = idTokenResult.claims;
 
@@ -29,10 +29,10 @@ export function useIsAdmin() {
         }
 
         // Fallback robusto: verificar en el servidor (si tienes /api/me implementado)
+        // Reuse the same token to avoid extra fetch
         try {
-          const idToken = await user.getIdToken();
           const res = await fetch(`${API_URL}/api/me`, {
-            headers: { Authorization: `Bearer ${idToken}` },
+            headers: { Authorization: `Bearer ${idTokenResult.token}` },
           });
           if (res.ok) {
             const data = await res.json();

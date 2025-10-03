@@ -17,6 +17,70 @@ export const getCompanies = async (req: Request, res: Response) => {
   }
 };
 
+// Optimized endpoint: Get companies with users populated in one query
+export const getCompaniesWithUsers = async (req: Request, res: Response) => {
+  try {
+    // 1. Get all companies
+    const companiesSnapshot = await admin.firestore().collection("companies").get();
+    const companies = companiesSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    // 2. Get all unique user IDs from all companies
+    const allUserIds = new Set<string>();
+    companies.forEach((company: any) => {
+      if (company.users && Array.isArray(company.users)) {
+        company.users.forEach((uid: string) => allUserIds.add(uid));
+      }
+    });
+
+    // 3. Batch fetch all users in chunks (Firestore 'in' query limit is 30)
+    const userIds = Array.from(allUserIds);
+    const usersMap = new Map();
+
+    if (userIds.length > 0) {
+      const chunks = [];
+      for (let i = 0; i < userIds.length; i += 30) {
+        chunks.push(userIds.slice(i, i + 30));
+      }
+
+      const userSnapshots = await Promise.all(
+        chunks.map((chunk) =>
+          admin
+            .firestore()
+            .collection("users")
+            .where(admin.firestore.FieldPath.documentId(), "in", chunk)
+            .get()
+        )
+      );
+
+      userSnapshots.forEach((snapshot) => {
+        snapshot.docs.forEach((doc) => {
+          usersMap.set(doc.id, { id: doc.id, ...doc.data() });
+        });
+      });
+    }
+
+    // 4. Map users to their respective companies
+    const companiesWithUsers = companies.map((company: any) => {
+      const users = company.users && Array.isArray(company.users)
+        ? company.users.map((uid: string) => usersMap.get(uid)).filter(Boolean)
+        : [];
+
+      return {
+        ...company,
+        users,
+      };
+    });
+
+    res.status(200).json(companiesWithUsers);
+  } catch (error) {
+    console.error("Error fetching companies with users:", error);
+    res.status(500).json({ error: "Failed to fetch companies with users" });
+  }
+};
+
 export const createCompany = async (
   req: Request,
   res: Response

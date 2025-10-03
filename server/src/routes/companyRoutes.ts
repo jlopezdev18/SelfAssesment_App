@@ -1,9 +1,10 @@
 import express from 'express';
-import { addUserToCompany, createCompany, deleteCompany, deleteUserFromCompany, getCompanies, updateCompany, updateUserInCompany } from '../controllers/companyController';
+import { addUserToCompany, createCompany, deleteCompany, deleteUserFromCompany, getCompanies, getCompaniesWithUsers, updateCompany, updateUserInCompany } from '../controllers/companyController';
 
 const router = express.Router();
 
 router.get('/companies', getCompanies);
+router.get('/companies-with-users', getCompaniesWithUsers); // Optimized endpoint
 router.post('/create-company', createCompany);
 router.post('/add-user-to-company', addUserToCompany);
 router.put('/update-user/:userId', updateUserInCompany);

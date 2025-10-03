@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { onAuthStateChanged, onIdTokenChanged } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../../firebase/config";
 import Dashboard from "../dashboard/Dashboard";
 import Login from "../login/Login";
@@ -12,8 +12,8 @@ const ProtectedDashboard: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, checkUser);
-    const unsubscribeToken = onIdTokenChanged(auth, checkUser);
+    // Use only onAuthStateChanged to avoid duplicate calls
+    const unsubscribe = onAuthStateChanged(auth, checkUser);
 
     async function checkUser(user: import("firebase/auth").User | null) {
       if (!user) {
@@ -22,6 +22,7 @@ const ProtectedDashboard: React.FC = () => {
         navigate("/", { replace: true });
         return;
       }
+      // Remove force refresh - use cached token for faster load
       const idTokenResult = await user.getIdTokenResult();
       if (idTokenResult.claims.firstTimeLogin) {
         setShowResetForm(true);
@@ -35,13 +36,22 @@ const ProtectedDashboard: React.FC = () => {
     }
 
     return () => {
-      unsubscribeAuth();
-      unsubscribeToken();
+      unsubscribe();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (allowed === null && !showResetForm) return null; // o un spinner
+  // Show loading spinner during auth check
+  if (allowed === null && !showResetForm) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (showResetForm) {
     return <ResetPasswordForm onBack={() => setShowResetForm(false)} />;

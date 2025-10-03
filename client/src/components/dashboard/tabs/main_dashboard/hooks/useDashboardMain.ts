@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import type { ReleasePost } from "../types/DashboardMainInterfaces";
 
@@ -11,12 +11,7 @@ export function useDashboardMain(postsPerSlide: number) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedPost, setSelectedPost] = useState<ReleasePost | null>(null);
 
-  // Obtener posts al montar
-  useEffect(() => {
-    fetchPosts();
-  }, []);
-
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     setLoading(true);
     try {
       const res = await axios.get(`${API_URL}/api/release-posts`);
@@ -27,10 +22,15 @@ export function useDashboardMain(postsPerSlide: number) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Agregar un nuevo post
-  const addReleasePost = async (
+  // Obtener posts al montar
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
+
+  // Agregar un nuevo post - optimized to update state directly instead of refetching
+  const addReleasePost = useCallback(async (
     postData: ReleasePost,
     onSuccess?: () => void,
     onError?: (error: string) => void
@@ -41,7 +41,8 @@ export function useDashboardMain(postsPerSlide: number) {
         `${API_URL}/api/release-posts/addPost`,
         postData
       );
-      await fetchPosts();
+      // Update state directly instead of refetching all posts
+      setReleasePosts((prev) => [res.data as ReleasePost, ...prev]);
       setError(null);
       onSuccess?.();
       return res.data;
@@ -52,9 +53,9 @@ export function useDashboardMain(postsPerSlide: number) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const deleteReleasePost = async (
+  const deleteReleasePost = useCallback(async (
     postId: string,
     onSuccess?: () => void,
     onError?: (error: string) => void
@@ -74,23 +75,27 @@ export function useDashboardMain(postsPerSlide: number) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const totalSlides = Math.ceil(releasePosts.length / postsPerSlide);
 
-  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % totalSlides);
-  const prevSlide = () =>
-    setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
+  const nextSlide = useCallback(() => {
+    setCurrentSlide((prev) => (prev + 1) % totalSlides);
+  }, [totalSlides]);
 
-  const openPost = (post: ReleasePost) => {
+  const prevSlide = useCallback(() => {
+    setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
+  }, [totalSlides]);
+
+  const openPost = useCallback((post: ReleasePost) => {
     setSelectedPost(post);
     document.body.style.overflow = "hidden";
-  };
+  }, []);
 
-  const closePost = () => {
+  const closePost = useCallback(() => {
     setSelectedPost(null);
     document.body.style.overflow = "unset";
-  };
+  }, []);
 
   return {
     releasePosts,

@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   Company,
   NewCompanyForm,
@@ -8,49 +9,38 @@ import type {
 import axios from "axios";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
+// Fetch companies with React Query
+const fetchCompaniesAPI = async (): Promise<Company[]> => {
+  const response = await axios.get(`${API_URL}/api/company/companies-with-users`);
+  const companies = response.data as Company[];
+  return companies.filter(company => !company.deleted);
+};
+
 export function useCompanies(initialCompanies: Company[]) {
-  const [companies, setCompanies] = useState<Company[]>(initialCompanies);
-  const [loading, setLoading] = useState<boolean>(false);
+  const queryClient = useQueryClient();
 
+  // Use React Query for fetching with caching
+  const { data, isLoading } = useQuery({
+    queryKey: ['companies'],
+    queryFn: fetchCompaniesAPI,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
+  const [companies, setCompanies] = useState<Company[]>(data || initialCompanies);
+  const [loading, setLoading] = useState<boolean>(isLoading);
+
+  // Update local state when React Query data changes
+  if (data && data !== companies) {
+    setCompanies(data);
+  }
+
+  if (isLoading !== loading) {
+    setLoading(isLoading);
+  }
 
   const fetchCompanies = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get(`${API_URL}/api/company/companies`);
-      const companies = response.data as Company[];
-      const activeCompanies = companies.filter(company => !company.deleted);
-
-
-      const companiesWithUsers = await Promise.all(
-        activeCompanies.map(async (company) => {
-          const userIds = company.users as User[];
-
-          let users: User[] = [];
-          if (userIds && userIds.length > 0) {
-            users = await Promise.all(
-              userIds.map(async (uid) => {
-                const res = await axios.get(`${API_URL}/api/users/${uid}`);
-                return res.data as User;
-              })
-            );
-          }
-
-          return { ...company, users };
-        })
-      );
-
-      setCompanies(companiesWithUsers);
-    } catch (error) {
-      console.error("Error fetching companies:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchCompanies();
-  }, []);
+    queryClient.invalidateQueries({ queryKey: ['companies'] });
+  }, [queryClient]);
 
   const addCompany = async (
     form: NewCompanyForm,
@@ -64,8 +54,8 @@ export function useCompanies(initialCompanies: Company[]) {
         form
       );
 
-      // Fetch fresh data to ensure proper formatting
-      await fetchCompanies();
+      // Invalidate and refetch
+      await queryClient.invalidateQueries({ queryKey: ['companies'] });
       onSuccess();
     } catch (error) {
       console.error("Error creating company:", error);
@@ -176,7 +166,7 @@ const deleteUser = async (userId: string, companyId: string) => {
     setLoading(false);
   }
 };
- 
+
 
 const deleteCompany = async (companyId: string, onSuccess?: () => void) => {
   setLoading(true);
