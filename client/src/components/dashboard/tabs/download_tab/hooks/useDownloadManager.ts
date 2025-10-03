@@ -29,8 +29,18 @@ function formatBytes(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
+export interface GroupedVersion {
+  id: string;
+  version: string;
+  releaseDate: string;
+  releaseType: string;
+  description: string;
+  files: DownloadItem[];
+}
+
 export function useDownloadManager() {
   const [downloads, setDownloads] = useState<DownloadItem[]>([]);
+  const [groupedVersions, setGroupedVersions] = useState<GroupedVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -184,7 +194,7 @@ export function useDownloadManager() {
     onError?: (error: string) => void
   ) => {
     try {
-      setLoading(true);
+      // NO setLoading aquí - el listener maneja la actualización
 
       // Delete from Storage
       const storageRef = ref(storage, item.path);
@@ -201,7 +211,6 @@ export function useDownloadManager() {
 
         for (const versionDoc of versionsSnapshot.docs) {
           const versionData = versionDoc.data();
-          // let wasModified = false;
 
           // Check and remove file from version's files array
           if (versionData.files) {
@@ -224,10 +233,104 @@ export function useDownloadManager() {
     } catch (error) {
       console.error("Error deleting file:", error);
       onError?.("Failed to delete the file. Please try again.");
-    } finally {
-      setLoading(false);
+    }
+    // NO finally con setLoading - el listener lo maneja
+  };
+
+  const deleteVersion = async (
+    versionId: string,
+    onSuccess?: () => void,
+    onError?: (error: string) => void
+  ) => {
+    try {
+      // Get version data
+      const versionDoc = await getDocs(
+        query(collection(db, "versions"))
+      );
+      const version = versionDoc.docs.find((doc) => doc.id === versionId);
+      
+      if (!version) {
+        throw new Error("Version not found");
+      }
+
+      const versionData = version.data();
+      const files: VersionFile[] = versionData.files || [];
+
+      // Delete all files from storage and downloads collection
+      for (const file of files) {
+        const path = `downloads/${file.type === 'installer' ? 'installers' : 'updates'}/${file.filename}`;
+        
+        // Delete from Storage
+        try {
+          const storageRef = ref(storage, path);
+          await deleteObject(storageRef);
+        } catch (err) {
+          console.warn(`Failed to delete storage file: ${path}`, err);
+        }
+
+        // Delete from Firestore downloads collection
+        if (file.downloadId) {
+          try {
+            await deleteDoc(doc(db, "downloads", file.downloadId));
+          } catch (err) {
+            console.warn(`Failed to delete download doc: ${file.downloadId}`, err);
+          }
+        }
+      }
+
+      // Delete version document
+      await deleteDoc(doc(db, "versions", versionId));
+
+      onSuccess?.();
+    } catch (error) {
+      console.error("Error deleting version:", error);
+      onError?.("Failed to delete the version. Please try again.");
     }
   };
+
+  // Real-time listener for versions to create grouped view
+  useEffect(() => {
+    const q = query(collection(db, "versions"));
+    const unsub = onSnapshot(
+      q,
+      (snapshot) => {
+        const versions: GroupedVersion[] = snapshot.docs.map((doc) => {
+          const data = doc.data();
+
+          // Convert version files to DownloadItems
+          const versionFiles: DownloadItem[] = (data.files || []).map((file: VersionFile) => ({
+            id: file.downloadId || '',
+            name: file.filename,
+            path: `downloads/${file.type === 'installer' ? 'installers' : 'updates'}/${file.filename}`,
+            type: file.type === 'installer' ? 'installers' as const : 'updates' as const,
+            size: file.size,
+            downloadUrl: '', // Will be fetched from storage if needed
+            updated: data.releaseDate || new Date().toISOString(),
+            hashes: file.hashes,
+          }));
+
+          return {
+            id: doc.id,
+            version: data.version,
+            releaseDate: data.releaseDate,
+            releaseType: data.releaseType,
+            description: data.description,
+            files: versionFiles,
+          };
+        });
+
+        setGroupedVersions(versions.sort((a, b) => {
+          const dateA = new Date(a.releaseDate).getTime();
+          const dateB = new Date(b.releaseDate).getTime();
+          return dateB - dateA;
+        }));
+      },
+      (error) => {
+        console.error("Error fetching versions:", error);
+      }
+    );
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     fetchDownloads();
@@ -235,12 +338,14 @@ export function useDownloadManager() {
 
   return {
     downloads,
+    groupedVersions,
     loading,
     uploading,
     uploadError,
     setUploadError,
     addItem,
     deleteItem,
+    deleteVersion,
     fetchDownloads,
   };
 }

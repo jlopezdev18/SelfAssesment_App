@@ -26,9 +26,12 @@ import {
 import VersionForm from "./VersionForm";
 import type { VersioningProps } from "./types/VersioningInterfaces";
 import { useAllVersions } from "./hooks/useAllVersions";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { storage } from "../../../../firebase/config";
 import { toast } from "sonner";
+import { useUploadProgress } from "./hooks/useUploadProgress";
+import { useNavigationBlock } from "./hooks/useNavigationBlock";
+import UploadProgressModal from "./UploadProgressModal";
 
 interface FileProps {
   id: string;
@@ -65,9 +68,27 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
     null
   );
 
-  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
+  // Upload Progress Hook
+  const {
+    uploadState,
+    startUpload,
+    updateProgress,
+    completeFile,
+    finishUpload,
+    cancelUpload,
+  } = useUploadProgress();
+
+  // Navigation Block Hook
+  useNavigationBlock(
+    uploadState.isUploading,
+    "Upload in progress. If you leave, your progress will be lost."
+  );
+
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(
+    null
+  );
   const selectedVersion = selectedVersionId
-    ? allVersions.find(v => v.id === selectedVersionId) || latestVersion
+    ? allVersions.find((v) => v.id === selectedVersionId) || latestVersion
     : latestVersion;
 
   // Local files state to avoid losing focus on edit
@@ -129,11 +150,12 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
         files: {
           installer: {
             filename:
-              selectedVersion.files.find((f) => f.type === "installer")?.filename ||
-              "",
+              selectedVersion.files.find((f) => f.type === "installer")
+                ?.filename || "",
             type: "installer",
             size:
-              selectedVersion.files.find((f) => f.type === "installer")?.size || "",
+              selectedVersion.files.find((f) => f.type === "installer")?.size ||
+              "",
             downloadUrl:
               selectedVersion.files.find((f) => f.type === "installer")
                 ?.downloadUrl || "",
@@ -163,37 +185,38 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
           },
           update: {
             filename:
-              selectedVersion.files.find((f) => f.type === "update")?.filename ||
-              "",
+              selectedVersion.files.find((f) => f.type === "update")
+                ?.filename || "",
             type: "update",
             size:
-              selectedVersion.files.find((f) => f.type === "update")?.size || "",
-            downloadUrl:
-              selectedVersion.files.find((f) => f.type === "update")?.downloadUrl ||
+              selectedVersion.files.find((f) => f.type === "update")?.size ||
               "",
+            downloadUrl:
+              selectedVersion.files.find((f) => f.type === "update")
+                ?.downloadUrl || "",
             hashes: [
               {
                 algorithm: "SHA512",
                 hash:
-                  selectedVersion.files.find((f) => f.type === "update")?.hashes[0]
-                    ?.hash || "",
+                  selectedVersion.files.find((f) => f.type === "update")
+                    ?.hashes[0]?.hash || "",
               },
               {
                 algorithm: "SHA384",
                 hash:
-                  selectedVersion.files.find((f) => f.type === "update")?.hashes[1]
-                    ?.hash || "",
+                  selectedVersion.files.find((f) => f.type === "update")
+                    ?.hashes[1]?.hash || "",
               },
               {
                 algorithm: "SHA256",
                 hash:
-                  selectedVersion.files.find((f) => f.type === "update")?.hashes[2]
-                    ?.hash || "",
+                  selectedVersion.files.find((f) => f.type === "update")
+                    ?.hashes[2]?.hash || "",
               },
             ],
             downloadId:
-              selectedVersion.files.find((f) => f.type === "update")?.downloadId ||
-              "",
+              selectedVersion.files.find((f) => f.type === "update")
+                ?.downloadId || "",
           },
         },
       });
@@ -263,113 +286,190 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
       return;
     }
 
-    let installerDownloadUrl = formData.files.installer.downloadUrl;
-    let updateDownloadUrl = formData.files.update.downloadUrl;
+    try {
+      // Calcular total de archivos a subir
+      const filesToUpload = [];
+      const fileNames = [];
+      if (selectedInstallerFile) {
+        filesToUpload.push(selectedInstallerFile);
+        fileNames.push(selectedInstallerFile.name);
+      }
+      if (selectedUpdateFile) {
+        filesToUpload.push(selectedUpdateFile);
+        fileNames.push(selectedUpdateFile.name);
+      }
 
-    // Upload installer file if selected
-    if (selectedInstallerFile) {
-      const installerRef = ref(
-        storage,
-        `downloads/installers/${selectedInstallerFile.name}`
-      );
-      await uploadBytes(installerRef, selectedInstallerFile);
-      installerDownloadUrl = await getDownloadURL(installerRef);
-    }
+      // Iniciar progreso de carga
+      if (filesToUpload.length > 0) {
+        startUpload(filesToUpload.length, fileNames);
+      }
 
-    // Upload update file if selected
-    if (selectedUpdateFile) {
-      const updateRef = ref(
-        storage,
-        `downloads/updates/${selectedUpdateFile.name}`
-      );
-      await uploadBytes(updateRef, selectedUpdateFile);
-      updateDownloadUrl = await getDownloadURL(updateRef);
-    }
+      let installerDownloadUrl = formData.files.installer.downloadUrl;
+      let updateDownloadUrl = formData.files.update.downloadUrl;
 
-    const filesToAdd = [];
-    if (formData.files.installer.filename && formData.files.installer.size) {
-      filesToAdd.push({
-        ...formData.files.installer,
-        id: Date.now().toString(),
-        downloadUrl: installerDownloadUrl,
-      });
-    }
-    if (formData.files.update.filename && formData.files.update.size) {
-      filesToAdd.push({
-        ...formData.files.update,
-        id: (Date.now() + 1).toString(),
-        downloadUrl: updateDownloadUrl,
-      });
-    }
+      // Upload installer file if selected
+      if (selectedInstallerFile) {
+        const installerRef = ref(
+          storage,
+          `downloads/installers/${selectedInstallerFile.name}`
+        );
 
-    if (filesToAdd.length === 0) {
-      toast.warning("Please fill in at least one file information");
-      return;
-    }
+        const uploadTask = uploadBytesResumable(
+          installerRef,
+          selectedInstallerFile
+        );
 
-    const today = new Date();
-    const formattedDate = `${today.getFullYear()}-${String(
-      today.getMonth() + 1
-    ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")} ${String(
-      today.getHours()
-    ).padStart(2, "0")}:${String(today.getMinutes()).padStart(2, "0")}`;
+        await new Promise((resolve, reject) => {
+          uploadTask.on(
+            "state_changed",
+            (snapshot) => {
+              updateProgress(
+                selectedInstallerFile.name,
+                snapshot.bytesTransferred,
+                snapshot.totalBytes,
+                0,
+                filesToUpload.length
+              );
+            },
+            (error) => reject(error),
+            () => resolve(uploadTask.snapshot)
+          );
+        });
 
-    const dataToSubmit = {
-      version: formData.version,
-      releaseDate: formattedDate,
-      releaseType: formData.releaseType,
-      description: formData.description,
-      files: filesToAdd,
-    };
+        installerDownloadUrl = await getDownloadURL(installerRef);
+        completeFile(selectedInstallerFile.name);
+      }
 
-    await addVersion(dataToSubmit);
+      // Upload update file if selected
+      if (selectedUpdateFile) {
+        const updateRef = ref(
+          storage,
+          `downloads/updates/${selectedUpdateFile.name}`
+        );
 
-    setFormMode("none");
+        const uploadTask = uploadBytesResumable(updateRef, selectedUpdateFile);
 
-    toast("Version added successfully! 🎉", {
-      style: {
-        background: "#10b981",
-        color: "white",
-        border: "1px solid #059669",
-      },
-      duration: 4000,
-    });
+        const fileIndex = selectedInstallerFile ? 1 : 0;
 
-    setFormData({
-      version: "",
-      releaseDate: "",
-      releaseType: "",
-      description: "",
-      files: {
-        installer: {
-          filename: "",
-          type: "installer",
-          size: "",
-          downloadUrl: "",
-          hashes: [
-            { algorithm: "SHA512", hash: "" },
-            { algorithm: "SHA384", hash: "" },
-            { algorithm: "SHA256", hash: "" },
-          ],
-          downloadId: "",
+        await new Promise((resolve, reject) => {
+          uploadTask.on(
+            "state_changed",
+            (snapshot) => {
+              updateProgress(
+                selectedUpdateFile.name,
+                snapshot.bytesTransferred,
+                snapshot.totalBytes,
+                fileIndex,
+                filesToUpload.length
+              );
+            },
+            (error) => reject(error),
+            () => resolve(uploadTask.snapshot)
+          );
+        });
+
+        updateDownloadUrl = await getDownloadURL(updateRef);
+        completeFile(selectedUpdateFile.name);
+      }
+
+      const filesToAdd = [];
+      if (formData.files.installer.filename && formData.files.installer.size) {
+        filesToAdd.push({
+          ...formData.files.installer,
+          id: Date.now().toString(),
+          downloadUrl: installerDownloadUrl,
+        });
+      }
+      if (formData.files.update.filename && formData.files.update.size) {
+        filesToAdd.push({
+          ...formData.files.update,
+          id: (Date.now() + 1).toString(),
+          downloadUrl: updateDownloadUrl,
+        });
+      }
+
+      if (filesToAdd.length === 0) {
+        toast.warning("Please fill in at least one file information");
+        return;
+      }
+
+      const today = new Date();
+      const formattedDate = `${today.getFullYear()}-${String(
+        today.getMonth() + 1
+      ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")} ${String(
+        today.getHours()
+      ).padStart(2, "0")}:${String(today.getMinutes()).padStart(2, "0")}`;
+
+      const dataToSubmit = {
+        version: formData.version,
+        releaseDate: formattedDate,
+        releaseType: formData.releaseType,
+        description: formData.description,
+        files: filesToAdd,
+      };
+
+      await addVersion(dataToSubmit);
+
+      // Cerrar formulario inmediatamente
+      setFormMode("none");
+      setSelectedInstallerFile(null);
+      setSelectedUpdateFile(null);
+
+      // Limpiar formData
+      setFormData({
+        version: "",
+        releaseDate: "",
+        releaseType: "",
+        description: "",
+        files: {
+          installer: {
+            filename: "",
+            type: "installer",
+            size: "",
+            downloadUrl: "",
+            hashes: [
+              { algorithm: "SHA512", hash: "" },
+              { algorithm: "SHA384", hash: "" },
+              { algorithm: "SHA256", hash: "" },
+            ],
+            downloadId: "",
+          },
+          update: {
+            filename: "",
+            type: "update",
+            size: "",
+            downloadUrl: "",
+            hashes: [
+              { algorithm: "SHA512", hash: "" },
+              { algorithm: "SHA384", hash: "" },
+              { algorithm: "SHA256", hash: "" },
+            ],
+            downloadId: "",
+          },
         },
-        update: {
-          filename: "",
-          type: "update",
-          size: "",
-          downloadUrl: "",
-          hashes: [
-            { algorithm: "SHA512", hash: "" },
-            { algorithm: "SHA384", hash: "" },
-            { algorithm: "SHA256", hash: "" },
-          ],
-          downloadId: "",
-        },
-      },
-    });
+      });
 
-    setSelectedInstallerFile(null);
-    setSelectedUpdateFile(null);
+      // Finalizar carga y mostrar 100%
+      finishUpload();
+
+      // Dar tiempo para ver el 100% antes de cerrar el modal
+      setTimeout(() => {
+        cancelUpload(); // Cierra el modal
+
+        toast("Version added successfully! 🎉", {
+          style: {
+            background: "#10b981",
+            color: "white",
+            border: "1px solid #059669",
+          },
+          duration: 4000,
+        });
+      }, 1500);
+    } catch (error) {
+      cancelUpload();
+      toast.error("Error uploading files. Please try again.");
+      console.error("Upload error:", error);
+    }
   };
 
   // --- EDIT VERSION ---
@@ -380,6 +480,16 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
     }
 
     try {
+      // Calcular total de archivos a subir
+      const filesToUpload = [];
+      if (selectedInstallerFile) filesToUpload.push(selectedInstallerFile);
+      if (selectedUpdateFile) filesToUpload.push(selectedUpdateFile);
+
+      // Iniciar progreso de carga
+      if (filesToUpload.length > 0) {
+        startUpload(filesToUpload.length);
+      }
+
       // Mantener URLs actuales por defecto
       let installerDownloadUrl = formData.files.installer.downloadUrl;
       let updateDownloadUrl = formData.files.update.downloadUrl;
@@ -390,8 +500,31 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
           storage,
           `downloads/installers/${selectedInstallerFile.name}`
         );
-        await uploadBytes(installerRef, selectedInstallerFile);
+
+        const uploadTask = uploadBytesResumable(
+          installerRef,
+          selectedInstallerFile
+        );
+
+        await new Promise((resolve, reject) => {
+          uploadTask.on(
+            "state_changed",
+            (snapshot) => {
+              updateProgress(
+                selectedInstallerFile.name,
+                snapshot.bytesTransferred,
+                snapshot.totalBytes,
+                0,
+                filesToUpload.length
+              );
+            },
+            (error) => reject(error),
+            () => resolve(uploadTask.snapshot)
+          );
+        });
+
         installerDownloadUrl = await getDownloadURL(installerRef);
+        completeFile(selectedInstallerFile.name);
       }
 
       if (selectedUpdateFile) {
@@ -399,8 +532,29 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
           storage,
           `downloads/updates/${selectedUpdateFile.name}`
         );
-        await uploadBytes(updateRef, selectedUpdateFile);
+
+        const uploadTask = uploadBytesResumable(updateRef, selectedUpdateFile);
+        const fileIndex = selectedInstallerFile ? 1 : 0;
+
+        await new Promise((resolve, reject) => {
+          uploadTask.on(
+            "state_changed",
+            (snapshot) => {
+              updateProgress(
+                selectedUpdateFile.name,
+                snapshot.bytesTransferred,
+                snapshot.totalBytes,
+                fileIndex,
+                filesToUpload.length
+              );
+            },
+            (error) => reject(error),
+            () => resolve(uploadTask.snapshot)
+          );
+        });
+
         updateDownloadUrl = await getDownloadURL(updateRef);
+        completeFile(selectedUpdateFile.name);
       }
 
       // Construir payload igual que en "Add" pero preservando los IDs existentes
@@ -435,21 +589,43 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
 
       await updateVersion(selectedVersion?.id, dataToSubmit);
 
-      // Limpiar estado de selección de archivos y cerrar el formulario
+      // Cerrar formulario inmediatamente
+      setFormMode("none");
       setSelectedInstallerFile(null);
       setSelectedUpdateFile(null);
-      setFormMode("none");
 
-      toast("Version updated successfully! ✨", {
-        style: {
-          background: "#10b981",
-          color: "white",
-          border: "1px solid #059669",
-        },
-        duration: 4000,
-      });
-    } catch {
+      // Finalizar carga si hubo archivos
+      if (filesToUpload.length > 0) {
+        finishUpload();
+
+        // Dar tiempo para ver el 100% antes de cerrar el modal
+        setTimeout(() => {
+          cancelUpload(); // Cierra el modal
+
+          toast("Version updated successfully! ✨", {
+            style: {
+              background: "#10b981",
+              color: "white",
+              border: "1px solid #059669",
+            },
+            duration: 4000,
+          });
+        }, 1500);
+      } else {
+        // Si no hubo carga, mostrar toast inmediatamente
+        toast("Version updated successfully! ✨", {
+          style: {
+            background: "#10b981",
+            color: "white",
+            border: "1px solid #059669",
+          },
+          duration: 4000,
+        });
+      }
+    } catch (error) {
+      cancelUpload();
       toast.error("Error al actualizar la versión, intenta de nuevo");
+      console.error("Update error:", error);
     }
   };
 
@@ -595,6 +771,24 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
 
   return (
     <div className="p-8">
+      {/* Upload Progress Modal */}
+      <UploadProgressModal
+        isOpen={uploadState.isUploading}
+        progress={uploadState.progress}
+        currentFile={uploadState.currentFile}
+        uploadedFiles={uploadState.uploadedFiles}
+        totalFiles={uploadState.totalFiles}
+        bytesTransferred={uploadState.bytesTransferred}
+        totalBytes={uploadState.totalBytes}
+        currentFileProgress={uploadState.currentFileProgress}
+        fileStatuses={uploadState.fileStatuses}
+        onCancel={() => {
+          cancelUpload();
+          toast.error("Upload cancelled");
+        }}
+        darkMode={darkMode}
+      />
+
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-600 to-blue-800">
           Version Information
@@ -634,9 +828,10 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete Version</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to delete version {selectedVersion.version}?
-                      This action cannot be undone and will also remove all associated
-                      installer and update files from the Downloads section.
+                      Are you sure you want to delete version{" "}
+                      {selectedVersion.version}? This action cannot be undone
+                      and will also remove all associated installer and update
+                      files from the Downloads section.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -663,7 +858,9 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
           } mb-6`}
         >
           <div className="flex items-center space-x-4">
-            <label className={`font-medium ${textClass}`}>Select Version:</label>
+            <label className={`font-medium ${textClass}`}>
+              Select Version:
+            </label>
             <select
               value={selectedVersionId || ""}
               onChange={(e) => setSelectedVersionId(e.target.value || null)}
@@ -675,7 +872,8 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
             >
               {allVersions.map((version, index) => (
                 <option key={version.id} value={version.id}>
-                  v{version.version} ({version.releaseType}) - {version.releaseDate}
+                  v{version.version} ({version.releaseType}) -{" "}
+                  {version.releaseDate}
                   {index === 0 ? " (Latest)" : ""}
                 </option>
               ))}
@@ -727,12 +925,15 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
               }`}
             >
               {selectedVersion?.releaseType
-                ? selectedVersion.releaseType.charAt(0).toUpperCase() + selectedVersion.releaseType.slice(1)
+                ? selectedVersion.releaseType.charAt(0).toUpperCase() +
+                  selectedVersion.releaseType.slice(1)
                 : "Unknown"}
             </div>
             <div className="flex items-center space-x-2 text-sm">
               <FaCalendarAlt className={mutedTextClass} />
-              <span className={mutedTextClass}>{selectedVersion?.releaseDate}</span>
+              <span className={mutedTextClass}>
+                {selectedVersion?.releaseDate}
+              </span>
             </div>
           </div>
         </div>

@@ -5,11 +5,15 @@ import Dashboard from "../dashboard/Dashboard";
 import Login from "../login/Login";
 import ResetPasswordForm from "../resetPassword/ResetPasswordForm";
 import { useNavigate } from "react-router-dom";
+import { useSessionTimeout } from "../../hooks/useSessionTimeout";
 
 const ProtectedDashboard: React.FC = () => {
   const [allowed, setAllowed] = useState<null | boolean>(null);
   const [showResetForm, setShowResetForm] = useState(false);
   const navigate = useNavigate();
+
+  // Initialize session timeout monitoring
+  useSessionTimeout();
 
   useEffect(() => {
     // Use only onAuthStateChanged to avoid duplicate calls
@@ -27,7 +31,7 @@ const ProtectedDashboard: React.FC = () => {
       if (idTokenResult.claims.firstTimeLogin) {
         setShowResetForm(true);
         setAllowed(false);
-         navigate("/", { replace: true });
+        navigate("/", { replace: true });
         return;
       }
       setAllowed(true);
@@ -38,7 +42,7 @@ const ProtectedDashboard: React.FC = () => {
     return () => {
       unsubscribe();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Show loading spinner during auth check

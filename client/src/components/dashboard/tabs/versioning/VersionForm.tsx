@@ -4,7 +4,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Loader2,
   Save,
   X,
   Upload,
@@ -14,7 +13,6 @@ import {
   FileText,
 } from "lucide-react";
 import type { VersionFormData } from "./types/VersioningInterfaces";
-import { useState } from "react";
 
 interface VersionFormProps {
   darkMode: boolean;
@@ -45,7 +43,6 @@ const VersionForm: React.FC<VersionFormProps> = ({
   onCancel,
   onSubmit,
 }) => {
-  const [isUploading, setIsUploading] = useState(false);
   const isInstallerReady =
     !!formData.files.installer.filename && !!formData.files.installer.size;
   const isUpdateReady =
@@ -61,12 +58,7 @@ const VersionForm: React.FC<VersionFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsUploading(true);
-    try {
-      await onSubmit();
-    } finally {
-      setIsUploading(false);
-    }
+    await onSubmit();
   };
 
   const handleHashChange = (
@@ -389,17 +381,8 @@ const VersionForm: React.FC<VersionFormProps> = ({
           disabled={isSaveDisabled}
           className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
-          {isUploading ? (
-            <>
-              <Loader2 className="animate-spin h-4 w-4 mr-2" />
-              Uploading...
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4 mr-2" />
-              Save Version
-            </>
-          )}
+          <Save className="w-4 h-4 mr-2" />
+          Save Version
         </Button>
       </div>
     </div>

@@ -124,9 +124,41 @@ export function useAllVersions() {
   ) => {
     setLoading(true);
     try {
+      // Obtener la versión actual para comparar archivos
+      const currentVersion = data.find(v => v.id === id);
+
       const updatedFiles = await Promise.all(
         versionData.files.map(async (file) => {
-          if (file.downloadId) {
+          // Buscar si hay un archivo anterior del mismo tipo
+          const oldFile = currentVersion?.files.find(f => f.type === file.type);
+
+          // Si hay un archivo anterior y el nuevo no tiene downloadId (es un archivo nuevo/diferente)
+          if (oldFile && !file.downloadId) {
+            // Eliminar el archivo anterior de Downloads
+            if (oldFile.downloadId) {
+              try {
+                await deleteDoc(doc(db, "downloads", oldFile.downloadId));
+              } catch (error) {
+                console.warn("Error deleting old download:", error);
+              }
+            }
+
+            // Eliminar el archivo anterior de Storage
+            try {
+              const folder = oldFile.type === "installer" ? "installers" : "updates";
+              const oldStoragePath = `downloads/${folder}/${oldFile.filename}`;
+              const oldStorageRef = ref(storage, oldStoragePath);
+              await deleteObject(oldStorageRef);
+            } catch (error) {
+              console.warn("Error deleting old file from storage:", error);
+            }
+
+            // Crear nuevo archivo en Downloads
+            const downloadId = await syncFileWithDownloads(file);
+            return { ...file, downloadId };
+          }
+          // Si tiene downloadId, solo actualizar
+          else if (file.downloadId) {
             await updateDoc(doc(db, "downloads", file.downloadId), {
               name: file.filename,
               size: file.size,
@@ -135,7 +167,9 @@ export function useAllVersions() {
               updated: new Date().toISOString(),
             });
             return file;
-          } else {
+          }
+          // Si es nuevo y no hay archivo anterior
+          else {
             const downloadId = await syncFileWithDownloads(file);
             return { ...file, downloadId };
           }

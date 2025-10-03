@@ -1,11 +1,20 @@
 import React, { useState } from "react";
-import { FaSearch, FaPlus } from "react-icons/fa";
+import {
+  FaSearch,
+  FaPlus,
+  FaChevronLeft,
+  FaChevronRight,
+  FaFingerprint,
+  FaTrash,
+} from "react-icons/fa";
 import { useIsAdmin } from "../../../../hooks/useIsAdmin";
 import { useDownloadManager } from "./hooks/useDownloadManager";
 import AddDownloadModal from "./AddDownloadModal";
 import DownloadsList from "./DownloadsList";
+import HashesModal from "./HashesModal";
 import type { DownloadItem, DownloadsProps } from "./types/DownloadInterfaces";
 import { toast } from "sonner";
+import ScaleLoader from "react-spinners/ScaleLoader";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +43,17 @@ const Downloads: React.FC<DownloadsProps> = ({
     open: boolean;
     item: DownloadItem | null;
   }>({ open: false, item: null });
+  const [deleteVersionDialog, setDeleteVersionDialog] = useState<{
+    open: boolean;
+    versionId: string | null;
+    versionName: string | null;
+  }>({ open: false, versionId: null, versionName: null });
+  const [hashesModal, setHashesModal] = useState<{
+    open: boolean;
+    hashes: Array<{ algorithm: string; hash: string }>;
+  }>({ open: false, hashes: [] });
+  const [currentPage, setCurrentPage] = useState(1);
+  const versionsPerPage = 3;
   const [newItem, setNewItem] = useState<DownloadItem>({
     id: "",
     name: "",
@@ -51,20 +71,99 @@ const Downloads: React.FC<DownloadsProps> = ({
   const { isAdmin } = useIsAdmin();
   const {
     downloads,
+    groupedVersions,
     uploading,
     uploadError,
     setUploadError,
     addItem,
     deleteItem,
+    deleteVersion,
     loading,
   } = useDownloadManager();
-  const filteredItems = downloads.filter((item) => {
+
+  // Separar archivos individuales (documents, resources) de versiones (installers, updates)
+  const individualFiles = downloads.filter(
+    (item) => item.type === "documents" || item.type === "resources"
+  );
+
+  // Filtrar versiones agrupadas
+  const filteredVersions = groupedVersions.filter((version) => {
+    if (filter === "all" || filter === "installers" || filter === "updates") {
+      const matchesSearch =
+        version.version.toLowerCase().includes(search.toLowerCase()) ||
+        version.files.some((f) =>
+          f.name.toLowerCase().includes(search.toLowerCase())
+        );
+      return matchesSearch;
+    }
+    return false;
+  });
+
+  // Paginación
+  const totalPages = Math.ceil(filteredVersions.length / versionsPerPage);
+  const startIndex = (currentPage - 1) * versionsPerPage;
+  const endIndex = startIndex + versionsPerPage;
+  const paginatedVersions = filteredVersions.slice(startIndex, endIndex);
+
+  // Filtrar archivos individuales
+  const filteredIndividualFiles = individualFiles.filter((item) => {
     const matchesType = filter === "all" ? true : item.type === filter;
     const matchesSearch = item.name
       .toLowerCase()
       .includes(search.toLowerCase());
     return matchesType && matchesSearch;
   });
+
+  // Reset to page 1 when search or filter changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filter]);
+
+  const handleShowHashes = (
+    hashes: Array<{ algorithm: string; hash: string }> | undefined
+  ) => {
+    if (hashes && hashes.length > 0) {
+      setHashesModal({ open: true, hashes });
+    }
+  };
+
+  const handleDeleteVersion = (versionId: string, versionName: string) => {
+    setDeleteVersionDialog({ open: true, versionId, versionName });
+  };
+
+  const handleConfirmDeleteVersion = () => {
+    if (!deleteVersionDialog.versionId) return;
+
+    deleteVersion(
+      deleteVersionDialog.versionId,
+      () => {
+        toast("Version deleted successfully", {
+          style: {
+            background: "#dc2626",
+            color: "white",
+            border: "1px solid #dc2626",
+          },
+          duration: 4000,
+        });
+        // Reset to first page if current page is now empty
+        if (paginatedVersions.length === 1 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
+      },
+      (error: string) => {
+        toast("Delete failed", {
+          description: error,
+          style: {
+            background: "#dc2626",
+            color: "white",
+            border: "1px solid #dc2626",
+          },
+          duration: 4000,
+        });
+      }
+    );
+    setDeleteVersionDialog({ open: false, versionId: null, versionName: null });
+  };
 
   const handleModalClose = () => {
     setShowAddModal(false);
@@ -218,17 +317,227 @@ const Downloads: React.FC<DownloadsProps> = ({
         </div>
       </div>
 
-      <DownloadsList
-        items={filteredItems}
-        cardClass={cardClass}
-        textClass={textClass}
-        mutedTextClass={mutedTextClass}
-        darkMode={darkMode}
-        getTypeIcon={getTypeIcon}
-        isAdmin={isAdmin}
-        onDelete={handleDeleteItem}
-        loading={loading}
-      />
+      {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <ScaleLoader color={darkMode ? "#60a5fa" : "#2563eb"} />
+        </div>
+      )}
+
+      {/* Content - Only show when not loading */}
+      {!loading && (
+        <>
+          {/* Archivos Individuales */}
+          {filteredIndividualFiles.length > 0 && (
+            <div className="space-y-4">
+              <h2 className={`text-xl font-bold ${textClass} px-2`}>
+                Individual Files
+              </h2>
+              <DownloadsList
+                items={filteredIndividualFiles}
+                cardClass={cardClass}
+                textClass={textClass}
+                mutedTextClass={mutedTextClass}
+                darkMode={darkMode}
+                getTypeIcon={getTypeIcon}
+                isAdmin={isAdmin}
+                onDelete={handleDeleteItem}
+                loading={loading}
+              />
+            </div>
+          )}
+
+          {/* Versiones Agrupadas */}
+          {(filter === "all" ||
+            filter === "installers" ||
+            filter === "updates") &&
+            filteredVersions.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between px-2">
+                  <h2 className={`text-xl font-bold ${textClass}`}>
+                    Application Versions
+                  </h2>
+                  {totalPages > 1 && (
+                    <span className={`text-sm ${mutedTextClass}`}>
+                      Page {currentPage} of {totalPages}
+                    </span>
+                  )}
+                </div>
+
+                {paginatedVersions.map((version) => (
+                  <div
+                    key={version.id}
+                    className={`${cardClass} rounded-xl border ${
+                      darkMode ? "border-gray-700" : "border-gray-200"
+                    } p-5 shadow-sm hover:shadow-md transition-shadow`}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className={`text-lg font-bold ${textClass}`}>
+                          Version {version.version}
+                        </h3>
+                        <p className={`text-sm ${mutedTextClass} mt-1`}>
+                          {version.description}
+                        </p>
+                        <div className="flex items-center gap-3 mt-2">
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${
+                              version.releaseType === "stable"
+                                ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                                : version.releaseType === "beta"
+                                ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
+                                : "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                            }`}
+                          >
+                            {version.releaseType}
+                          </span>
+                          <span className={`text-xs ${mutedTextClass}`}>
+                            {version.releaseDate}
+                          </span>
+                        </div>
+                      </div>
+                      {isAdmin && (
+                        <button
+                          onClick={() =>
+                            handleDeleteVersion(version.id, version.version)
+                          }
+                          className="flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm"
+                          title="Delete entire version"
+                        >
+                          <FaTrash className="w-3 h-3" />
+                          Delete Version
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="grid gap-2">
+                      {version.files.map((file) => (
+                        <div
+                          key={file.id}
+                          className={`flex items-center justify-between p-3 rounded-lg ${
+                            darkMode ? "bg-gray-700/30" : "bg-gray-50"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            {getTypeIcon(file.type)}
+                            <div>
+                              <p className={`font-medium ${textClass}`}>
+                                {file.name}
+                              </p>
+                              <p className={`text-xs ${mutedTextClass}`}>
+                                {file.size}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {file.hashes && file.hashes.length > 0 && (
+                              <button
+                                onClick={() => handleShowHashes(file.hashes)}
+                                className="px-3 py-1.5 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-sm flex items-center gap-2"
+                                title="View file hashes"
+                              >
+                                <FaFingerprint className="w-3 h-3" />
+                                Hashes
+                              </button>
+                            )}
+                            <a
+                              href={file.downloadUrl}
+                              download
+                              className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                            >
+                              Download
+                            </a>
+                            {isAdmin && (
+                              <button
+                                onClick={() => handleDeleteItem(file)}
+                                className="px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm"
+                              >
+                                Delete
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Paginación */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-6">
+                    <button
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(1, prev - 1))
+                      }
+                      disabled={currentPage === 1}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                        currentPage === 1
+                          ? "opacity-50 cursor-not-allowed"
+                          : "hover:scale-105"
+                      } ${
+                        darkMode
+                          ? "bg-gray-700 text-white"
+                          : "bg-gray-200 text-gray-800"
+                      }`}
+                    >
+                      <FaChevronLeft className="w-3 h-3" />
+                      Previous
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                        (page) => (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`w-10 h-10 rounded-lg font-medium transition-all ${
+                              currentPage === page
+                                ? "bg-blue-600 text-white scale-110"
+                                : darkMode
+                                ? "bg-gray-700 text-white hover:bg-gray-600"
+                                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        )
+                      )}
+                    </div>
+
+                    <button
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                      }
+                      disabled={currentPage === totalPages}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                        currentPage === totalPages
+                          ? "opacity-50 cursor-not-allowed"
+                          : "hover:scale-105"
+                      } ${
+                        darkMode
+                          ? "bg-gray-700 text-white"
+                          : "bg-gray-200 text-gray-800"
+                      }`}
+                    >
+                      Next
+                      <FaChevronRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+          {/* Mensaje cuando no hay resultados */}
+          {filteredVersions.length === 0 &&
+            filteredIndividualFiles.length === 0 && (
+              <div className={`${cardClass} p-8 rounded-xl text-center`}>
+                <p className={mutedTextClass}>
+                  No files found matching your criteria
+                </p>
+              </div>
+            )}
+        </>
+      )}
 
       <AddDownloadModal
         open={showAddModal}
@@ -280,6 +589,55 @@ const Downloads: React.FC<DownloadsProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog
+        open={deleteVersionDialog.open}
+        onOpenChange={(open) =>
+          setDeleteVersionDialog({ open, versionId: null, versionName: null })
+        }
+      >
+        <AlertDialogContent
+          className={
+            darkMode
+              ? "bg-gray-800 border-gray-700"
+              : "bg-white border-gray-200"
+          }
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle className={textClass}>
+              Delete Version
+            </AlertDialogTitle>
+            <AlertDialogDescription className={mutedTextClass}>
+              Are you sure you want to delete version "
+              {deleteVersionDialog.versionName}" and all its files? This action
+              cannot be undone and will permanently delete all associated
+              installers and updates.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              className={darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDeleteVersion}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete Version
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <HashesModal
+        isOpen={hashesModal.open}
+        onClose={() => setHashesModal({ open: false, hashes: [] })}
+        hashes={hashesModal.hashes}
+        darkMode={darkMode}
+        textClass={textClass}
+        mutedTextClass={mutedTextClass}
+      />
     </div>
   );
 };
