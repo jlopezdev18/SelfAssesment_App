@@ -37,12 +37,20 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
   const { releasePosts, addReleasePost, deleteReleasePost, loading } =
     useDashboardMain(3);
 
-  const formatDate = (dateObj: { _seconds: number; _nanoseconds: number }) =>
-    new Date(dateObj._seconds * 1000).toLocaleDateString("en-US", {
+  const formatDate = (dateObj: { _seconds: number; _nanoseconds: number } | undefined) => {
+    if (!dateObj || !dateObj._seconds) {
+      return new Date().toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    }
+    return new Date(dateObj._seconds * 1000).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
     });
+  };
   const { isAdmin } = useIsAdmin();
   const openPost = (post: ReleasePost) => {
     setSelectedPost(post);

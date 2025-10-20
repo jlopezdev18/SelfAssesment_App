@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogPortal,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -346,12 +347,13 @@ export default function TipTapRichTextEditor({
         <EditorContent editor={editor} />
       </div>
 
-      {/* Link dialog */}
+      {/* Link dialog with Portal to avoid nested dialog warning */}
       <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Insert link</DialogTitle>
-          </DialogHeader>
+        <DialogPortal>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Insert link</DialogTitle>
+            </DialogHeader>
 
           <div className="space-y-2">
             <Label htmlFor="link-url">URL</Label>
@@ -391,7 +393,8 @@ export default function TipTapRichTextEditor({
               Apply
             </Button>
           </DialogFooter>
-        </DialogContent>
+          </DialogContent>
+        </DialogPortal>
       </Dialog>
     </div>
   );

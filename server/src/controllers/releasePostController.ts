@@ -35,15 +35,18 @@ export const addReleasePost = async (
         .json({ error: "Title, fullContent, and version are required." });
     }
     // Add the release post to the database
-    const postRef = await admin.firestore().collection("releasePosts").add({
+    const timestamp = admin.firestore.Timestamp.now();
+    const postData = {
       title,
       fullContent,
       version,
       tags,
       image,
-      date: admin.firestore.Timestamp.now(), // Use current timestamp as release date
-      createdAt: admin.firestore.Timestamp.now(),
-    });
+      date: timestamp, // Use current timestamp as release date
+      createdAt: timestamp,
+    };
+
+    const postRef = await admin.firestore().collection("releasePosts").add(postData);
 
     // Fetch all users
     const authUsers = await admin.auth().listUsers();
@@ -51,14 +54,17 @@ export const addReleasePost = async (
       .filter((user) => user.email)
       .map((user) => user.email);
 
-    // Send the post to all users (e.g., via  email)
+    // Send the post to all users (e.g., via email) - don't wait for emails
     userEmails.forEach((email) => {
-      sendReleaseEmailToAllUsers(email, title, fullContent, version, tags);
+      sendReleaseEmailToAllUsers(email, title, fullContent, version, tags).catch(err => {
+        console.error(`Failed to send email to ${email}:`, err);
+      });
     });
 
+    // Return the complete post data including the generated ID
     res.status(201).json({
       id: postRef.id,
-      message: "Release post added and sent to users.",
+      ...postData,
     });
   } catch (error) {
     console.error("Error adding release post:", error);
