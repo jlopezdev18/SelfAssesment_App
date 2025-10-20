@@ -7,7 +7,7 @@ import type {
   User,
 } from "../types/ClientsInterfaces";
 import axios from "axios";
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API_URL = import.meta.env.VITE_API_URL;
 
 // Fetch companies with React Query
 const fetchCompaniesAPI = async (): Promise<Company[]> => {

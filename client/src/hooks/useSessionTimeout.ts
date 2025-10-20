@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { signOut } from 'firebase/auth';
+import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import { toast } from 'sonner';
 
@@ -11,27 +11,10 @@ export const useSessionTimeout = () => {
   const checkIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const user = auth.currentUser;
-
-    // Only set up timeout if user is logged in
-    if (!user) {
-      // Clear any existing timestamp when user logs out
-      localStorage.removeItem(LOGIN_TIMESTAMP_KEY);
-      return;
-    }
-
-    // Initialize login timestamp if it doesn't exist
-    const existingTimestamp = localStorage.getItem(LOGIN_TIMESTAMP_KEY);
-    if (!existingTimestamp) {
-      localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
-    }
-
     const checkSessionExpiry = async () => {
       const loginTimestamp = localStorage.getItem(LOGIN_TIMESTAMP_KEY);
-      
+
       if (!loginTimestamp) {
-        // No timestamp found, create one
-        localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
         return;
       }
 
@@ -43,9 +26,9 @@ export const useSessionTimeout = () => {
         try {
           await signOut(auth);
           localStorage.removeItem(LOGIN_TIMESTAMP_KEY);
-          
+
           toast.error('Session Expired', {
-            description: 'Your session has expired after 8 hours. Please log in again.',
+            description: 'Your session has expired. Please log in again.',
             duration: 6000,
             style: {
               background: '#dc2626',
@@ -59,14 +42,57 @@ export const useSessionTimeout = () => {
       }
     };
 
-    // Check immediately
-    checkSessionExpiry();
+    // Listen to auth state changes
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      // Clear any existing interval
+      if (checkIntervalRef.current) {
+        clearInterval(checkIntervalRef.current);
+        checkIntervalRef.current = null;
+      }
 
-    // Then check every minute
-    checkIntervalRef.current = setInterval(checkSessionExpiry, CHECK_INTERVAL);
+      if (user) {
+        // User is logged in - check if we have a valid session timestamp
+        const existingTimestamp = localStorage.getItem(LOGIN_TIMESTAMP_KEY);
+
+        if (!existingTimestamp) {
+          // No timestamp found - this shouldn't happen if login functions set it
+          // Set it now as a fallback
+          localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
+        } else {
+          // Check if session has already expired
+          const elapsedTime = Date.now() - parseInt(existingTimestamp);
+          if (elapsedTime >= SESSION_DURATION) {
+            // Session already expired - log out immediately
+            signOut(auth).then(() => {
+              localStorage.removeItem(LOGIN_TIMESTAMP_KEY);
+              toast.error('Session Expired', {
+                description: 'Your session has expired after 8 hours. Please log in again.',
+                duration: 6000,
+                style: {
+                  background: '#dc2626',
+                  color: 'white',
+                  border: '1px solid #dc2626',
+                },
+              });
+            });
+            return;
+          }
+        }
+
+        // Check immediately
+        checkSessionExpiry();
+
+        // Then check every minute
+        checkIntervalRef.current = setInterval(checkSessionExpiry, CHECK_INTERVAL);
+      } else {
+        // User is logged out - clear timestamp
+        localStorage.removeItem(LOGIN_TIMESTAMP_KEY);
+      }
+    });
 
     // Cleanup on unmount
     return () => {
+      unsubscribe();
       if (checkIntervalRef.current) {
         clearInterval(checkIntervalRef.current);
       }

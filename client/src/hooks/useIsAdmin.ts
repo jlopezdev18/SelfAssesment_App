@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getAuth, onIdTokenChanged, type User } from "firebase/auth";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API_URL = import.meta.env.VITE_API_URL;
 
 // Cache to avoid redundant API calls across components
 let adminCache: { isAdmin: boolean; timestamp: number } | null = null;

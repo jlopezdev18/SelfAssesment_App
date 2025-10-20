@@ -8,7 +8,7 @@ import {
   doc,
   deleteDoc,
 } from "firebase/firestore";
-const API_URL = import.meta.env.VITE_API_URL|| "http://localhost:4000";
+const API_URL = import.meta.env.VITE_API_URL;
 export interface VersionFile {
   id: string;
   filename: string;

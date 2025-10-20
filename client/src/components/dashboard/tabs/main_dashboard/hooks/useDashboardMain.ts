@@ -3,7 +3,7 @@ import axios from "axios";
 import type { ReleasePost } from "../types/DashboardMainInterfaces";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API_URL = import.meta.env.VITE_API_URL;
 
 export function useDashboardMain(postsPerSlide: number) {
   const [currentSlide, setCurrentSlide] = useState(0);
