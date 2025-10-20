@@ -194,12 +194,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
         />
       )}
 
-      {/* Add Post Modal */}
-      <AddReleasePostModal
-        open={openAddPostModal}
-        onClose={() => setOpenAddPostModal(false)}
-        onSubmit={handleAddPost}
-      />
+      {/* Add Post Modal (duplicate removed - already exists above) */}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog

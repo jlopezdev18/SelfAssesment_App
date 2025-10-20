@@ -87,8 +87,7 @@ export default function TipTapRichTextEditor({
     content: linkify(value || ""),
     editorProps: {
       attributes: {
-        class:
-          "tiptap-editor min-h-[200px] w-full rounded-md border bg-white p-3 focus:outline-none",
+        class: 'tiptap-editor min-h-[200px] w-full rounded-md border border-input bg-transparent dark:bg-input/30 p-3 focus:outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] transition-[color,box-shadow]',
       },
     },
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
@@ -159,33 +158,58 @@ export default function TipTapRichTextEditor({
 
   return (
     <div
-      className={["rounded-md border bg-white", className]
+      className={[
+        "rounded-md border border-input bg-transparent dark:bg-input/30 overflow-hidden",
+        className
+      ]
         .filter(Boolean)
         .join(" ")}
     >
       <style>
         {`
-          /* Reset inherited colors (e.g., from .prose or text-primary) */
-          .tiptap-editor { color:#1f2937 !important; } /* gray-800 */
-          .tiptap-editor :where(p, li, blockquote) { color:inherit !important; }
-          .tiptap-editor :where(h1,h2,h3,h4,h5,h6) { color:#111827 !important; } /* gray-900 */
+          /* Light mode text colors */
+          .tiptap-editor {
+            color: hsl(var(--foreground)) !important;
+          }
+          .tiptap-editor :where(p, li, blockquote) { color: inherit !important; }
+          .tiptap-editor :where(h1,h2,h3,h4,h5,h6) {
+            color: hsl(var(--foreground)) !important;
+            font-weight: 600;
+          }
 
-          /* Links and elements */
-          .tiptap-editor a, .tiptap-editor a:visited { color:#2563eb; text-decoration:underline; }
+          /* Links */
+          .tiptap-editor a,
+          .tiptap-editor a:visited {
+            color: hsl(var(--primary));
+            text-decoration: underline;
+          }
+
+          /* Blockquote */
+          .tiptap-editor blockquote {
+            border-left: 3px solid hsl(var(--border));
+            padding-left: 0.75rem;
+            color: hsl(var(--muted-foreground)) !important;
+            margin: 0.5rem 0;
+          }
+
+          /* Lists */
           .tiptap-editor ul { list-style: disc; padding-left: 1.5rem; }
           .tiptap-editor ol { list-style: decimal; padding-left: 1.5rem; }
           .tiptap-editor li { margin: 0.125rem 0; }
-          .tiptap-editor blockquote {
-            border-left: 3px solid #e5e7eb;
-            padding-left: 0.75rem;
-            color: #6b7280 !important; /* gray-500 for quotes */
-            margin: 0.5rem 0;
+
+          /* Placeholder */
+          .tiptap-editor p.is-editor-empty:first-child::before {
+            color: hsl(var(--muted-foreground));
+            content: attr(data-placeholder);
+            float: left;
+            height: 0;
+            pointer-events: none;
           }
         `}
       </style>
 
       <div
-        className="flex flex-wrap items-center gap-1 border-b p-2"
+        className="flex flex-wrap items-center gap-1 border-b border-input p-2"
         role="toolbar"
         aria-label="Editor toolbar"
       >
@@ -230,7 +254,7 @@ export default function TipTapRichTextEditor({
           <LinkIcon className="h-4 w-4" />
         </Button>
 
-        <div className="mx-2 h-5 w-px bg-gray-300" />
+        <div className="mx-2 h-5 w-px bg-border" />
 
         <Button
           type="button"
@@ -269,7 +293,7 @@ export default function TipTapRichTextEditor({
           <Quote className="h-4 w-4" />
         </Button>
 
-        <div className="mx-2 h-5 w-px bg-gray-300" />
+        <div className="mx-2 h-5 w-px bg-border" />
 
         <Button
           type="button"
@@ -302,7 +326,7 @@ export default function TipTapRichTextEditor({
           <AlignRight className="h-4 w-4" />
         </Button>
 
-        <div className="mx-2 h-5 w-px bg-gray-300" />
+        <div className="mx-2 h-5 w-px bg-border" />
 
         <Button
           type="button"

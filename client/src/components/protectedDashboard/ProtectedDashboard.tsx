@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../../firebase/config";
-import Dashboard from "../dashboard/Dashboard";
 import Login from "../login/Login";
 import ResetPasswordForm from "../resetPassword/ResetPasswordForm";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useSessionTimeout } from "../../hooks/useSessionTimeout";
 
 const ProtectedDashboard: React.FC = () => {
-  const [allowed, setAllowed] = useState<null | boolean>(null);
   const [showResetForm, setShowResetForm] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Initialize session timeout monitoring
   useSessionTimeout();
@@ -21,21 +21,24 @@ const ProtectedDashboard: React.FC = () => {
 
     async function checkUser(user: import("firebase/auth").User | null) {
       if (!user) {
-        setAllowed(false);
         setShowResetForm(false);
-        navigate("/", { replace: true });
+        setIsLoading(false);
+        // Only navigate if not already on root
+        if (location.pathname !== "/") {
+          navigate("/", { replace: true });
+        }
         return;
       }
       // Remove force refresh - use cached token for faster load
       const idTokenResult = await user.getIdTokenResult();
       if (idTokenResult.claims.firstTimeLogin) {
         setShowResetForm(true);
-        setAllowed(false);
+        setIsLoading(false);
         navigate("/", { replace: true });
         return;
       }
-      setAllowed(true);
-      setShowResetForm(false);
+      // User is authenticated, redirect to dashboard
+      setIsLoading(false);
       navigate("/dashboard/main", { replace: true });
     }
 
@@ -46,12 +49,12 @@ const ProtectedDashboard: React.FC = () => {
   }, []);
 
   // Show loading spinner during auth check
-  if (allowed === null && !showResetForm) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading...</p>
+          <p className="text-gray-600 dark:text-gray-300 font-medium">Loading...</p>
         </div>
       </div>
     );
@@ -60,11 +63,8 @@ const ProtectedDashboard: React.FC = () => {
   if (showResetForm) {
     return <ResetPasswordForm onBack={() => setShowResetForm(false)} />;
   }
-  return allowed ? (
-    <Dashboard />
-  ) : (
-    <Login onShowResetForm={() => setShowResetForm(true)} />
-  );
+
+  return <Login onShowResetForm={() => setShowResetForm(true)} />;
 };
 
 export default ProtectedDashboard;

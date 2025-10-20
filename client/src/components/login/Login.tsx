@@ -11,6 +11,10 @@ import Logo from "/assets/Logo.svg";
 import { loginWithEmail } from "../../firebase/auth";
 import { getAuth } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 export default function Login({
   onShowResetForm,
@@ -23,6 +27,7 @@ export default function Login({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const onSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
@@ -41,6 +46,16 @@ export default function Login({
           onShowResetForm();
           return;
         }
+
+        // Prefetch data while showing toast to improve perceived performance
+        queryClient.prefetchQuery({
+          queryKey: ['release-posts'],
+          queryFn: async () => {
+            const res = await axios.get(`${API_URL}/api/release-posts`);
+            return res.data;
+          },
+          staleTime: 5 * 60 * 1000,
+        });
 
         // Show welcome toast for successful login
         const userName =

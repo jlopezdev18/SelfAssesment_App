@@ -3,6 +3,10 @@ import { getAuth, onIdTokenChanged, type User } from "firebase/auth";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
+// Cache to avoid redundant API calls across components
+let adminCache: { isAdmin: boolean; timestamp: number } | null = null;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 export function useIsAdmin() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -12,6 +16,13 @@ export function useIsAdmin() {
 
     const resolveIsAdmin = async (user: User) => {
       try {
+        // Check cache first
+        if (adminCache && Date.now() - adminCache.timestamp < CACHE_DURATION) {
+          setIsAdmin(adminCache.isAdmin);
+          setLoading(false);
+          return;
+        }
+
         // Use cached token first for faster load - only force refresh if needed
         const idTokenResult = await user.getIdTokenResult(false);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -24,6 +35,7 @@ export function useIsAdmin() {
 
         if (adminClaim) {
           setIsAdmin(true);
+          adminCache = { isAdmin: true, timestamp: Date.now() };
           setLoading(false);
           return;
         }
@@ -36,12 +48,16 @@ export function useIsAdmin() {
           });
           if (res.ok) {
             const data = await res.json();
-            setIsAdmin(Boolean(data?.isAdmin));
+            const isAdminValue = Boolean(data?.isAdmin);
+            setIsAdmin(isAdminValue);
+            adminCache = { isAdmin: isAdminValue, timestamp: Date.now() };
           } else {
             setIsAdmin(false);
+            adminCache = { isAdmin: false, timestamp: Date.now() };
           }
         } catch {
           setIsAdmin(false);
+          adminCache = { isAdmin: false, timestamp: Date.now() };
         } finally {
           setLoading(false);
         }

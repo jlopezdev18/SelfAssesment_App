@@ -13,10 +13,13 @@ const Settings = lazy(() => import("./tabs/settings/Settings"));
 const ClientsDashboard = lazy(() => import("./tabs/clients_tab/ClientsDashboard"));
 const Versioning = lazy(() => import("./tabs/versioning/Versioning"));
 
-// Loading fallback component
+// Loading fallback component with better UX
 const LoadingFallback = () => (
-  <div className="flex items-center justify-center h-screen">
-    <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600"></div>
+  <div className="flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+      <p className="text-gray-600 dark:text-gray-300 font-medium">Loading dashboard...</p>
+    </div>
   </div>
 );
 
@@ -51,9 +54,9 @@ const Dashboard: React.FC = () => {
         <div className="flex-1 overflow-auto">
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
-              <Route index element={<Navigate to="dashboard/main" replace />} />
+              <Route index element={<Navigate to="main" replace />} />
               <Route
-                path="/main"
+                path="main"
                 element={
                   <DashboardMain
                     darkMode={isDarkMode}
@@ -64,7 +67,7 @@ const Dashboard: React.FC = () => {
                 }
               />
               <Route
-                path="/downloads"
+                path="downloads"
                 element={
                   <Downloads
                     cardClass={cardClass}
@@ -76,7 +79,7 @@ const Dashboard: React.FC = () => {
                 }
               />
               <Route
-                path="/versioning"
+                path="versioning"
                 element={
                   <Versioning
                     cardClass={cardClass}
@@ -88,11 +91,11 @@ const Dashboard: React.FC = () => {
                 }
               />
               <Route
-                path="/settings"
+                path="settings"
                 element={<Settings darkMode={isDarkMode} />}
               />
               <Route
-                path="/clients"
+                path="clients"
                 element={
                   <ClientsDashboard
                     cardClass={cardClass}

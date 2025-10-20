@@ -1,81 +1,79 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import axios from "axios";
 import type { ReleasePost } from "../types/DashboardMainInterfaces";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 export function useDashboardMain(postsPerSlide: number) {
-  const [releasePosts, setReleasePosts] = useState<ReleasePost[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedPost, setSelectedPost] = useState<ReleasePost | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetchPosts = useCallback(async () => {
-    setLoading(true);
-    try {
+  // Use React Query for data fetching with caching
+  const { data: releasePosts = [], isLoading: loading, error } = useQuery({
+    queryKey: ['release-posts'],
+    queryFn: async () => {
       const res = await axios.get(`${API_URL}/api/release-posts`);
-      setReleasePosts(res.data as ReleasePost[]);
-      setError(null);
-    } catch {
-      setError("Error fetching posts");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return res.data as ReleasePost[];
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
 
-  // Obtener posts al montar
-  useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
+  // Mutation for adding posts
+  const addPostMutation = useMutation({
+    mutationFn: async (postData: ReleasePost) => {
+      const res = await axios.post(`${API_URL}/api/release-posts/addPost`, postData);
+      return res.data as ReleasePost;
+    },
+    onSuccess: (newPost) => {
+      // Optimistically update cache
+      queryClient.setQueryData(['release-posts'], (old: ReleasePost[] = []) => [newPost, ...old]);
+    },
+  });
 
-  // Agregar un nuevo post - optimized to update state directly instead of refetching
+  // Mutation for deleting posts
+  const deletePostMutation = useMutation({
+    mutationFn: async (postId: string) => {
+      await axios.delete(`${API_URL}/api/release-posts/${postId}`);
+      return postId;
+    },
+    onSuccess: (deletedId) => {
+      // Optimistically update cache
+      queryClient.setQueryData(['release-posts'], (old: ReleasePost[] = []) =>
+        old.filter((post) => post.id !== deletedId)
+      );
+    },
+  });
+
   const addReleasePost = useCallback(async (
     postData: ReleasePost,
     onSuccess?: () => void,
     onError?: (error: string) => void
   ) => {
-    setLoading(true);
     try {
-      const res = await axios.post(
-        `${API_URL}/api/release-posts/addPost`,
-        postData
-      );
-      // Update state directly instead of refetching all posts
-      setReleasePosts((prev) => [res.data as ReleasePost, ...prev]);
-      setError(null);
+      await addPostMutation.mutateAsync(postData);
       onSuccess?.();
-      return res.data;
     } catch {
-      const errorMessage = "Error adding post";
-      setError(errorMessage);
-      onError?.(errorMessage);
-    } finally {
-      setLoading(false);
+      onError?.("Error adding post");
     }
-  }, []);
+  }, [addPostMutation]);
 
   const deleteReleasePost = useCallback(async (
     postId: string,
     onSuccess?: () => void,
     onError?: (error: string) => void
   ) => {
-    setLoading(true);
     try {
-      await axios.delete(`${API_URL}/api/release-posts/${postId}`);
-      setReleasePosts((prev) => prev.filter((post) => post.id !== postId));
-      setError(null);
+      await deletePostMutation.mutateAsync(postId);
       onSuccess?.();
       return true;
     } catch {
-      const errorMessage = "Error deleting post";
-      setError(errorMessage);
-      onError?.(errorMessage);
+      onError?.("Error deleting post");
       return false;
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  }, [deletePostMutation]);
 
   const totalSlides = Math.ceil(releasePosts.length / postsPerSlide);
 
@@ -100,7 +98,7 @@ export function useDashboardMain(postsPerSlide: number) {
   return {
     releasePosts,
     loading,
-    error,
+    error: error ? "Error fetching posts" : null,
     currentSlide,
     setCurrentSlide,
     selectedPost,
@@ -111,6 +109,5 @@ export function useDashboardMain(postsPerSlide: number) {
     totalSlides,
     addReleasePost,
     deleteReleasePost,
-    fetchPosts,
   };
 }
