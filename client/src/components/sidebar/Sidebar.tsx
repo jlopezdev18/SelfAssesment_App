@@ -44,7 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   sidebarClass,
 }) => {
   const { isDarkMode } = useTheme();
-  const { isAdmin } = useIsAdmin();
+  const { isAdmin, loading: isAdminLoading } = useIsAdmin();
   const [user] = useAuthState(auth);
   const navigate = useNavigate();
 
@@ -154,7 +154,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             darkMode={isDarkMode}
           />
 
-          {isAdmin && (
+          {!isAdminLoading && isAdmin && (
             <>
               <SectionHeader title="CLIENTS" />
               <NavItem
@@ -171,7 +171,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Bottom section - Role Management, Theme Toggle & Logout */}
       <div className="p-6">
-        {isAdmin && (
+        {!isAdminLoading && isAdmin && (
           <>
             <NavItem
               icon={<FaUserShield className="w-5 h-5 flex-shrink-0" />}
