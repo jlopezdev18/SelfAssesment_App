@@ -41,13 +41,14 @@ const CompanyModal: React.FC<CompanyModalProps> = ({
   loading,
   isEditing,
 }) => {
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit();
+    if (loading) return; // Prevent multiple submissions
+    await onSubmit();
   };
 
   return (
-    <Dialog open={open}>
+    <Dialog open={open} onOpenChange={(open) => !open && !loading && onClose()}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -73,6 +74,7 @@ const CompanyModal: React.FC<CompanyModalProps> = ({
                   value={form.companyName}
                   onChange={(e) => onChange("companyName", e.target.value)}
                   className={errors.companyName ? "border-destructive" : ""}
+                  disabled={loading}
                 />
                 {errors.companyName && (
                   <p className="text-sm text-destructive">
@@ -89,6 +91,7 @@ const CompanyModal: React.FC<CompanyModalProps> = ({
                   value={form.companyEmail}
                   onChange={(e) => onChange("companyEmail", e.target.value)}
                   className={errors.companyEmail ? "border-destructive" : ""}
+                  disabled={loading}
                 />
                 {errors.companyEmail && (
                   <p className="text-sm text-destructive">
@@ -118,6 +121,7 @@ const CompanyModal: React.FC<CompanyModalProps> = ({
                     value={form.firstName}
                     onChange={(e) => onChange("firstName", e.target.value)}
                     className={errors.firstName ? "border-destructive" : ""}
+                    disabled={loading}
                   />
                   {errors.firstName && (
                     <p className="text-sm text-destructive">
@@ -134,6 +138,7 @@ const CompanyModal: React.FC<CompanyModalProps> = ({
                     value={form.lastName}
                     onChange={(e) => onChange("lastName", e.target.value)}
                     className={errors.lastName ? "border-destructive" : ""}
+                    disabled={loading}
                   />
                   {errors.lastName && (
                     <p className="text-sm text-destructive">
@@ -151,6 +156,7 @@ const CompanyModal: React.FC<CompanyModalProps> = ({
                   value={form.email}
                   onChange={(e) => onChange("email", e.target.value)}
                   className={errors.email ? "border-destructive" : ""}
+                  disabled={loading}
                 />
                 {errors.email && (
                   <p className="text-sm text-destructive">{errors.email}</p>
@@ -160,7 +166,7 @@ const CompanyModal: React.FC<CompanyModalProps> = ({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
               Cancel
             </Button>
             <Button

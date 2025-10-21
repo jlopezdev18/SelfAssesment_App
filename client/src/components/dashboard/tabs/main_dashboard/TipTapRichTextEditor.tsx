@@ -32,6 +32,7 @@ import {
   AlignRight,
   Eraser,
 } from "lucide-react";
+import { linkify, normalizeUrl } from "@/utils/formatters";
 
 type Props = {
   value?: string; // initial HTML
@@ -49,17 +50,7 @@ export default function TipTapRichTextEditor({
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
 
-  // Convert bare URLs in initial/external HTML into anchor tags
-  const linkify = (input: string) => {
-    if (!input) return input;
-    // if already has anchors, keep as is
-    if (/<a\b[^>]*>/i.test(input)) return input;
-    const urlRE = /(https?:\/\/[^\s<>"')]+)|(www\.[^\s<>"')]+)/gi;
-    return input.replace(urlRE, (m) => {
-      const href = m.startsWith("http") ? m : `https://${m}`;
-      return `<a href="${href}" target="_blank" rel="noopener noreferrer">${m}</a>`;
-    });
-  };
+  // Using imported linkify from utils
 
   const editor = useEditor({
     extensions: [
@@ -118,12 +109,7 @@ export default function TipTapRichTextEditor({
     setLinkOpen(true);
   };
 
-  const normalizeUrl = (u: string) => {
-    const s = u.trim();
-    if (!s) return "";
-    if (/^(https?:\/\/|mailto:|tel:)/i.test(s)) return s;
-    return `https://${s}`;
-  };
+  // Using imported normalizeUrl from utils
 
   const applyLink = () => {
     const href = normalizeUrl(linkUrl);

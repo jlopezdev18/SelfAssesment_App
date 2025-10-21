@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase/config';
-import { toast } from 'sonner';
+import { toastError } from '@/utils/toastNotifications';
 
 const SESSION_DURATION = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
 const CHECK_INTERVAL = 60 * 1000; // Check every minute
@@ -11,6 +11,18 @@ export const useSessionTimeout = () => {
   const checkIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    // Extracted logout logic to avoid duplication
+    const performLogout = async (message: string) => {
+      try {
+        await signOut(auth);
+        localStorage.removeItem(LOGIN_TIMESTAMP_KEY);
+
+        toastError('Session Expired', message);
+      } catch (error) {
+        console.error('Error signing out:', error);
+      }
+    };
+
     const checkSessionExpiry = async () => {
       const loginTimestamp = localStorage.getItem(LOGIN_TIMESTAMP_KEY);
 
@@ -23,22 +35,7 @@ export const useSessionTimeout = () => {
 
       // If 8 hours have passed, log out the user
       if (elapsedTime >= SESSION_DURATION) {
-        try {
-          await signOut(auth);
-          localStorage.removeItem(LOGIN_TIMESTAMP_KEY);
-
-          toast.error('Session Expired', {
-            description: 'Your session has expired. Please log in again.',
-            duration: 6000,
-            style: {
-              background: '#dc2626',
-              color: 'white',
-              border: '1px solid #dc2626',
-            },
-          });
-        } catch (error) {
-          console.error('Error signing out:', error);
-        }
+        await performLogout('Your session has expired. Please log in again.');
       }
     };
 
@@ -63,18 +60,7 @@ export const useSessionTimeout = () => {
           const elapsedTime = Date.now() - parseInt(existingTimestamp);
           if (elapsedTime >= SESSION_DURATION) {
             // Session already expired - log out immediately
-            signOut(auth).then(() => {
-              localStorage.removeItem(LOGIN_TIMESTAMP_KEY);
-              toast.error('Session Expired', {
-                description: 'Your session has expired after 8 hours. Please log in again.',
-                duration: 6000,
-                style: {
-                  background: '#dc2626',
-                  color: 'white',
-                  border: '1px solid #dc2626',
-                },
-              });
-            });
+            performLogout('Your session has expired. Please log in again.');
             return;
           }
         }

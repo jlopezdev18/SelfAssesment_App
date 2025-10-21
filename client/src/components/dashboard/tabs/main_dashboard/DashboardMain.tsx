@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-//import { FaUsers } from "react-icons/fa";
 import ReleasePostModal from "./ReleasePostModal";
 import ReleasePostCarousel from "./ReleasePostCarousel";
 import type {
@@ -11,17 +10,9 @@ import { useDashboardMain } from "./hooks/useDashboardMain";
 import { useIsAdmin } from "../../../../hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
+import { toastSuccess, toastError } from "@/utils/toastNotifications";
+import { formatFirebaseDate } from "@/utils/formatters";
 
 const DashboardMain: React.FC<DashboardMainProps> = ({
   darkMode,
@@ -37,21 +28,8 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
   const { releasePosts, addReleasePost, deleteReleasePost, loading } =
     useDashboardMain(3);
 
-  const formatDate = (dateObj: { _seconds: number; _nanoseconds: number } | undefined) => {
-    if (!dateObj || !dateObj._seconds) {
-      return new Date().toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      });
-    }
-    return new Date(dateObj._seconds * 1000).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
   const { isAdmin } = useIsAdmin();
+
   const openPost = (post: ReleasePost) => {
     setSelectedPost(post);
     document.body.style.overflow = "hidden";
@@ -64,15 +42,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
         setOpenAddPostModal(false);
       },
       (error: string) => {
-        toast("Failed to add post", {
-          description: error,
-          style: {
-            background: "#dc2626",
-            color: "white",
-            border: "1px solid #dc2626",
-          },
-          duration: 4000,
-        });
+        toastError("Failed to add post", error);
       }
     );
   };
@@ -87,25 +57,10 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
     deleteReleasePost(
       deleteDialog.postId,
       () => {
-        toast("🗑️ Post deleted successfully", {
-          style: {
-            background: "#dc2626",
-            color: "white",
-            border: "1px solid #dc2626",
-          },
-          duration: 4000,
-        });
+        toastSuccess("Post deleted successfully");
       },
       (error: string) => {
-        toast("❌ Failed to delete post", {
-          description: error,
-          style: {
-            background: "#dc2626",
-            color: "white",
-            border: "1px solid #dc2626",
-          },
-          duration: 4000,
-        });
+        toastError("Failed to delete post", error);
       }
     );
     setDeleteDialog({ open: false, postId: null });
@@ -172,6 +127,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
           </Button>
         )}
       </div>
+
       {/* Add Release Post Modal */}
       <AddReleasePostModal
         open={openAddPostModal}
@@ -186,7 +142,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
         textClass={textClass}
         darkMode={darkMode}
         onPostClick={openPost}
-        formatDate={formatDate}
+        formatDate={formatFirebaseDate}
         handleDeletePost={handleDeletePost}
         loading={loading}
         isAdmin={isAdmin}
@@ -196,52 +152,21 @@ const DashboardMain: React.FC<DashboardMainProps> = ({
       {selectedPost && (
         <ReleasePostModal
           post={selectedPost}
-          formatDate={formatDate}
+          formatDate={formatFirebaseDate}
           onClose={() => setSelectedPost(null)}
           renderFullContent={renderFullContent}
         />
       )}
 
-      {/* Add Post Modal (duplicate removed - already exists above) */}
-
       {/* Delete Confirmation Dialog */}
-      <AlertDialog
+      <DeleteConfirmDialog
         open={deleteDialog.open}
         onOpenChange={(open) => setDeleteDialog({ open, postId: null })}
-      >
-        <AlertDialogContent
-          className={
-            darkMode
-              ? "bg-gray-800 border-gray-700"
-              : "bg-white border-gray-200"
-          }
-        >
-          <AlertDialogHeader>
-            <AlertDialogTitle className={textClass}>
-              Delete Post
-            </AlertDialogTitle>
-            <AlertDialogDescription
-              className={darkMode ? "text-gray-400" : "text-gray-600"}
-            >
-              Are you sure you want to delete this release post? This action
-              cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              className={darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        title="Delete Post"
+        description="Are you sure you want to delete this release post? This action cannot be undone."
+        onConfirm={handleConfirmDelete}
+        darkMode={darkMode}
+      />
     </div>
   );
 };

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { toast } from "sonner";
+import { toastSuccess } from "@/utils/toastNotifications";
 import type { ReleasePost } from "./types/DashboardMainInterfaces";
 import TipTapRichTextEditor from "./TipTapRichTextEditor";
 
@@ -93,10 +93,7 @@ const AddReleasePostModal: React.FC<AddReleasePostModalProps> = ({
     });
 
     // Show success toast
-    toast.success("Post created successfully! 🎉", {
-      description: "Your release post has been published to the dashboard.",
-      duration: 4000,
-    });
+    toastSuccess("Post created successfully! 🎉", "Your release post has been published to the dashboard.");
 
     onClose();
   };

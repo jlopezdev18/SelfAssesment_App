@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { SimpleThemeToggle } from "@/components/ui/theme-toggle";
-import { toast } from "sonner";
+import { toastSuccess } from "@/utils/toastNotifications";
 import Logo from "/assets/Logo.svg";
 import { loginWithEmail } from "../../firebase/auth";
 import { getAuth } from "firebase/auth";
@@ -32,7 +32,7 @@ export default function Login({
   const onSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(""); // Clear previous errors
+    setError(""); 
 
     try {
       await loginWithEmail(email, password);
@@ -56,28 +56,16 @@ export default function Login({
           },
           staleTime: 5 * 60 * 1000,
         });
-
-        // Show welcome toast for successful login
         const userName =
           user.displayName || user.email?.split("@")[0] || "User";
-        toast.success(`Welcome back, ${userName}! 🎉`, {
-          description: "You've successfully logged in to your dashboard.",
-          duration: 4000,
-          style: {
-            background: "#10b981",
-            color: "white",
-            border: "none",
-          },
-        });
+        toastSuccess(`Welcome back, ${userName}! 🎉`, "You've successfully logged in to your dashboard.");
       }
 
       navigate("/dashboard/main", { replace: true });
-      // Continue with normal login flow (redirect, etc.)
+  
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Login failed:", error.code);
-
-      // Simplified error handling
       setError("Login failed. Please check your credentials and try again.");
     } finally {
       setIsLoading(false);

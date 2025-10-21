@@ -2,37 +2,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Save,
-  X,
-  Upload,
-  Package,
-  RefreshCw,
-  Hash,
-  FileText,
-} from "lucide-react";
+import { Save, X, FileText } from "lucide-react";
 import type { VersionFormData } from "./types/VersioningInterfaces";
+import { FileUploadCard } from "./FileUploadCard";
+import { formatBytes } from "@/utils/formatters";
+import { FILE_UPLOAD } from "@/constants";
 
 interface VersionFormProps {
-  darkMode: boolean;
-  textClass: string;
-  mutedTextClass: string;
   formData: VersionFormData;
   setFormData: React.Dispatch<React.SetStateAction<VersionFormData>>;
   setSelectedInstallerFile: (file: File | null) => void;
   setSelectedUpdateFile: (file: File | null) => void;
   onCancel: () => void;
   onSubmit: () => void;
-  isEdit: boolean;
-}
-
-function formatBytes(bytes: number) {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
 const VersionForm: React.FC<VersionFormProps> = ({
@@ -80,7 +62,13 @@ const VersionForm: React.FC<VersionFormProps> = ({
     }));
   };
 
-  const handleFileInfo = (fileType: "installer" | "update", file: File) => {
+  const handleFileSelect = (fileType: "installer" | "update", file: File) => {
+    if (fileType === "installer") {
+      setSelectedInstallerFile(file);
+    } else {
+      setSelectedUpdateFile(file);
+    }
+
     setFormData((prev: VersionFormData) => ({
       ...prev,
       files: {
@@ -90,6 +78,26 @@ const VersionForm: React.FC<VersionFormProps> = ({
           filename: file.name,
           size: formatBytes(file.size),
           downloadId: prev.files[fileType].downloadId,
+        },
+      },
+    }));
+  };
+
+  const handleFileRemove = (fileType: "installer" | "update") => {
+    if (fileType === "installer") {
+      setSelectedInstallerFile(null);
+    } else {
+      setSelectedUpdateFile(null);
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      files: {
+        ...prev.files,
+        [fileType]: {
+          ...prev.files[fileType],
+          filename: "",
+          size: "",
         },
       },
     }));
@@ -132,7 +140,7 @@ const VersionForm: React.FC<VersionFormProps> = ({
                 onChange={(e) =>
                   handleVersionChange("releaseType", e.target.value)
                 }
-                placeholder="e.g., Q3 2024 Release"
+                placeholder="e.g., stable"
                 className="bg-white/70 dark:bg-gray-800/70 border-blue-200 dark:border-blue-800 focus:border-blue-500 focus:ring-blue-500"
                 required
               />
@@ -157,221 +165,41 @@ const VersionForm: React.FC<VersionFormProps> = ({
       </Card>
 
       {/* Installer File */}
-      <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50/50 to-white dark:from-gray-800/50 dark:to-gray-900/50">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-              <Package className="w-5 h-5 text-green-600 dark:text-green-400" />
-            </div>
-            <h4 className="text-lg font-semibold">Installer File</h4>
-            {isInstallerReady && (
-              <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                Ready
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Upload Installer
-            </label>
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                <Input
-                  type="file"
-                  accept=".exe,.zip,.msi"
-                  id="installer-upload"
-                  className="file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 bg-white/70 dark:bg-gray-800/70"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files[0]) {
-                      setSelectedInstallerFile(e.target.files[0]);
-                      handleFileInfo("installer", e.target.files[0]);
-                    }
-                  }}
-                />
-              </div>
-            </div>
-            {formData.files.installer.filename && (
-              <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Upload className="w-4 h-4 text-blue-600" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {formData.files.installer.filename}
-                      </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
-                        Size: {formData.files.installer.size}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    onClick={() =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        files: {
-                          ...prev.files,
-                          installer: {
-                            ...prev.files.installer,
-                            filename: "",
-                            size: "",
-                          },
-                        },
-                      }))
-                    }
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium mb-3 text-gray-700 dark:text-gray-300">
-              <Hash className="w-4 h-4" />
-              File Hashes
-            </label>
-            <div className="space-y-3">
-              {formData.files.installer.hashes.map((hashObj) => (
-                <div key={hashObj.algorithm} className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">
-                    {hashObj.algorithm}
-                  </label>
-                  <Input
-                    type="text"
-                    value={hashObj.hash}
-                    onChange={(e) =>
-                      handleHashChange(
-                        "installer",
-                        hashObj.algorithm,
-                        e.target.value
-                      )
-                    }
-                    className="font-mono text-sm bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500"
-                    placeholder={`Enter ${hashObj.algorithm} hash`}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <FileUploadCard
+        fileType="installer"
+        title="Installer File"
+        filename={formData.files.installer.filename}
+        size={formData.files.installer.size}
+        hashes={formData.files.installer.hashes}
+        acceptedExtensions={FILE_UPLOAD.ACCEPTED_EXTENSIONS}
+        onFileSelect={(file) => handleFileSelect("installer", file)}
+        onFileRemove={() => handleFileRemove("installer")}
+        onHashChange={(algorithm, value) =>
+          handleHashChange("installer", algorithm, value)
+        }
+      />
 
       {/* Update File */}
-      <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-50/50 to-white dark:from-gray-800/50 dark:to-gray-900/50">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
-              <RefreshCw className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-            </div>
-            <h4 className="text-lg font-semibold">Update File</h4>
-            {isUpdateReady && (
-              <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">
-                Ready
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Upload Update
-            </label>
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                <Input
-                  type="file"
-                  accept=".exe,.zip,.msi"
-                  id="update-upload"
-                  className="file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 bg-white/70 dark:bg-gray-800/70"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files[0]) {
-                      setSelectedUpdateFile(e.target.files[0]);
-                      handleFileInfo("update", e.target.files[0]);
-                    }
-                  }}
-                />
-              </div>
-            </div>
-            {formData.files.update.filename && (
-              <div className="mt-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Upload className="w-4 h-4 text-orange-600" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {formData.files.update.filename}
-                      </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
-                        Size: {formData.files.update.size}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    onClick={() =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        files: {
-                          ...prev.files,
-                          update: {
-                            ...prev.files.update,
-                            filename: "",
-                            size: "",
-                          },
-                        },
-                      }))
-                    }
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium mb-3 text-gray-700 dark:text-gray-300">
-              <Hash className="w-4 h-4" />
-              File Hashes
-            </label>
-            <div className="space-y-3">
-              {formData.files.update.hashes.map((hashObj) => (
-                <div key={hashObj.algorithm} className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">
-                    {hashObj.algorithm}
-                  </label>
-                  <Input
-                    type="text"
-                    value={hashObj.hash}
-                    onChange={(e) =>
-                      handleHashChange(
-                        "update",
-                        hashObj.algorithm,
-                        e.target.value
-                      )
-                    }
-                    className="font-mono text-sm bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500"
-                    placeholder={`Enter ${hashObj.algorithm} hash`}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <FileUploadCard
+        fileType="update"
+        title="Update File"
+        filename={formData.files.update.filename}
+        size={formData.files.update.size}
+        hashes={formData.files.update.hashes}
+        acceptedExtensions={FILE_UPLOAD.ACCEPTED_EXTENSIONS}
+        onFileSelect={(file) => handleFileSelect("update", file)}
+        onFileRemove={() => handleFileRemove("update")}
+        onHashChange={(algorithm, value) =>
+          handleHashChange("update", algorithm, value)
+        }
+      />
 
       {/* Form Actions */}
       <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
         <Button
           variant="outline"
           onClick={onCancel}
-          className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all"
+          className="px-6 py-2 border-gray-300 text-gray-200  "
         >
           <X className="w-4 h-4 mr-2" />
           Cancel

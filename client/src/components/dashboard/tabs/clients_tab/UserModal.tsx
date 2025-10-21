@@ -40,13 +40,14 @@ const UserModal: React.FC<UserModalProps> = ({
   loading,
   isEditing,
 }) => {
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit();
+    if (loading) return; // Prevent multiple submissions
+    await onSubmit();
   };
 
   return (
-    <Dialog open={open}>
+    <Dialog open={open} onOpenChange={(open) => !open && !loading && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -65,6 +66,7 @@ const UserModal: React.FC<UserModalProps> = ({
                 value={form.firstName}
                 onChange={(e) => onChange("firstName", e.target.value)}
                 className={errors.firstName ? "border-destructive" : ""}
+                disabled={loading}
               />
               {errors.firstName && (
                 <p className="text-sm text-destructive">{errors.firstName}</p>
@@ -79,6 +81,7 @@ const UserModal: React.FC<UserModalProps> = ({
                 value={form.lastName}
                 onChange={(e) => onChange("lastName", e.target.value)}
                 className={errors.lastName ? "border-destructive" : ""}
+                disabled={loading}
               />
               {errors.lastName && (
                 <p className="text-sm text-destructive">{errors.lastName}</p>
@@ -94,6 +97,7 @@ const UserModal: React.FC<UserModalProps> = ({
               value={form.email}
               onChange={(e) => onChange("email", e.target.value)}
               className={errors.email ? "border-destructive" : ""}
+              disabled={loading}
             />
             {errors.email && (
               <p className="text-sm text-destructive">{errors.email}</p>
@@ -112,7 +116,7 @@ const UserModal: React.FC<UserModalProps> = ({
           )}
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
               Cancel
             </Button>
             <Button

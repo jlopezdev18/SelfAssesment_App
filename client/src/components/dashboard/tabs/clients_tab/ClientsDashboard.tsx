@@ -4,7 +4,6 @@ import CompanyTable from "./CompanyTable";
 import CompanyModal from "./CompanyModal";
 import UserModal from "./UserModal";
 import { useCompanies } from "./hooks/useCompanies";
-import { z } from "zod";
 import type {
   Company,
   CompanyDashboardProps,
@@ -17,32 +16,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
-
-// Zod schemas for validation
-const companySchema = z.object({
-  companyName: z.string().min(1, "Company name is required"),
-  companyEmail: z.string().email("Please enter a valid email address"),
-  firstName: z.string().min(1, "Owner first name is required"),
-  lastName: z.string().min(1, "Owner last name is required"),
-  email: z.string().email("Please enter a valid email address"),
-});
-
-const userSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Please enter a valid email address"),
-});
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
+import { toastSuccess, toastError } from "@/utils/toastNotifications";
+import { formatFirebaseDate } from "@/utils/formatters";
+import { companySchema, userSchema } from "@/schemas/validationSchemas";
 
 const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
   cardClass,
@@ -172,13 +149,6 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
     }
   };
 
-  const formatDate = (dateObj: { _seconds: number; _nanoseconds: number }) =>
-    new Date(dateObj?._seconds * 1000).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-
   const isSelected = (id: string) => selectedCompanies.indexOf(id) !== -1;
 
   // Company Modal handlers
@@ -281,22 +251,22 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
     if (!validateCompanyForm()) return;
     if (editingCompany) {
       if (updateCompany) {
-        updateCompany(
+        await updateCompany(
           editingCompany.id,
           newCompanyForm,
           () => {
             handleCloseCompanyModal();
-            toast.success("Company updated successfully");
+            toastSuccess("Company updated successfully");
           },
           () => {}
         );
       }
     } else {
-      addCompany(
+      await addCompany(
         newCompanyForm,
         () => {
           handleCloseCompanyModal();
-          toast.success("Company created successfully");
+          toastSuccess("Company created successfully");
         },
         () => {}
       );
@@ -328,17 +298,17 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
         newUserForm,
         () => {
           handleCloseUserModal();
-          toast.success("User updated successfully");
+          toastSuccess("User updated successfully");
         },
         () => {}
       );
     } else {
-      addUserToCompany(
+      await addUserToCompany(
         selectedCompanyForUser,
         newUserForm,
         () => {
           handleCloseUserModal();
-          toast.success("User added successfully");
+          toastSuccess("User added successfully");
         },
         () => {}
       );
@@ -411,7 +381,7 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
     try {
       if (deleteDialog.type === "company" && typeof deleteDialog.id === "string") {
         await deleteCompany(deleteDialog.id);
-        toast.success("Company deleted successfully");
+        toastSuccess("Company deleted successfully");
         // Only clean up selectedCompanies if the deleted company was actually selected
         if (selectedCompanies.includes(deleteDialog.id as string)) {
           setSelectedCompanies(prev => prev.filter(id => id !== deleteDialog.id));
@@ -422,7 +392,7 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
             await deleteCompany(companyId);
           })
         );
-        toast.success(`${deleteDialog.id.length} companies deleted successfully`);
+        toastSuccess(`${deleteDialog.id.length} companies deleted successfully`);
         setSelectedCompanies([]);
       } else if (
         deleteDialog.type === "user" &&
@@ -430,11 +400,11 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
         deleteDialog.companyId
       ) {
         await deleteUser(deleteDialog.id, deleteDialog.companyId);
-        toast.success("User deleted successfully");
+        toastSuccess("User deleted successfully");
       }
     } catch (error) {
       console.error("Delete operation failed:", error);
-      toast.error("Delete operation failed. Please try again.");
+      toastError("Delete operation failed. Please try again.");
     }
 
     handleCancelDelete();
@@ -530,7 +500,7 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
             onDeleteUser={handleDeleteUser}
             isSelected={isSelected}
             getStatusBadge={getStatusBadge}
-            formatDate={formatDate}
+            formatDate={formatFirebaseDate}
             cardClass={cardClass}
             mutedTextClass={mutedTextClass}
             darkMode={darkMode}
@@ -575,27 +545,14 @@ const ClientsDashboard: React.FC<CompanyDashboardProps> = ({
       />
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialog.open}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{deleteDialog.title}</AlertDialogTitle>
-            <AlertDialogDescription className="whitespace-pre-line">
-              {deleteDialog.description}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelDelete}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => !open && handleCancelDelete()}
+        title={deleteDialog.title}
+        description={deleteDialog.description}
+        onConfirm={handleConfirmDelete}
+        darkMode={darkMode}
+      />
     </div>
   );
 };

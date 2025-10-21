@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { toast } from "sonner";
+import { toastSuccess } from "@/utils/toastNotifications";
 import Logo from "/assets/Logo.svg";
 import {
   getAuth,
@@ -22,6 +22,7 @@ import {
 } from "firebase/auth";
 import axios from "axios";
 import zxcvbn from "zxcvbn";
+import { useTheme } from "@/contexts/ThemeContext";
 const API_URL = import.meta.env.VITE_API_URL;
 
 type PasswordInputProps = {
@@ -46,11 +47,11 @@ const PasswordInput = ({
   error,
 }: PasswordInputProps) => (
   <div className="space-y-2">
-    <Label htmlFor={id} className="text-sm font-medium text-gray-700">
+    <Label htmlFor={id} className="text-sm font-medium">
       {label}
     </Label>
     <div className="relative">
-      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
       <Input
         id={id}
         type={showPassword ? "text" : "password"}
@@ -68,13 +69,13 @@ const PasswordInput = ({
         type="button"
         variant="ghost"
         size="sm"
-        className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100"
+        className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
         onClick={toggleShow}
       >
         {showPassword ? (
-          <EyeOff className="h-4 w-4 text-gray-400" />
+          <EyeOff className="h-4 w-4 text-muted-foreground" />
         ) : (
-          <Eye className="h-4 w-4 text-gray-400" />
+          <Eye className="h-4 w-4 text-muted-foreground" />
         )}
       </Button>
     </div>
@@ -87,6 +88,7 @@ type ResetPasswordFormProps = {
 };
 
 export default function ResetPasswordForm({ onBack }: ResetPasswordFormProps) {
+  const { isDarkMode } = useTheme();
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -172,15 +174,7 @@ export default function ResetPasswordForm({ onBack }: ResetPasswordFormProps) {
       }
 
       // Show success toast
-      toast.success("Password changed successfully! 🔒", {
-        description: "Your password has been updated and you're now logged in.",
-        duration: 4000,
-        style: {
-          background: "#10b981",
-          color: "white",
-          border: "none",
-        },
-      });
+      toastSuccess("Password changed successfully! 🔒", "Your password has been updated and you're now logged in.");
 
       onBack();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -198,11 +192,17 @@ export default function ResetPasswordForm({ onBack }: ResetPasswordFormProps) {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8"
-      style={{
-        background:
-          "linear-gradient(90deg, rgba(32, 174, 248, 1) 0%, rgba(10, 148, 255, 1) 54%, rgba(143, 207, 255, 1) 100%)",
-      }}
+      className={`min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 ${
+        isDarkMode ? "bg-gray-900" : ""
+      }`}
+      style={
+        !isDarkMode
+          ? {
+              background:
+                "linear-gradient(90deg, rgba(32, 174, 248, 1) 0%, rgba(10, 148, 255, 1) 54%, rgba(143, 207, 255, 1) 100%)",
+            }
+          : undefined
+      }
     >
       <div className="w-full max-w-md space-y-8">
         {/* Logo and Header */}
@@ -215,17 +215,23 @@ export default function ResetPasswordForm({ onBack }: ResetPasswordFormProps) {
             />
           </div>
           <div className="space-y-2">
-            <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-50 via-white to-blue-100 drop-shadow-lg">
+            <h1
+              className={`text-4xl font-black ${
+                isDarkMode
+                  ? "text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600"
+                  : "text-transparent bg-clip-text bg-gradient-to-r from-blue-50 via-white to-blue-100"
+              } drop-shadow-lg`}
+            >
               Reset Password
             </h1>
-            <p className="text-sm text-blue-100">
+            <p className={`text-sm ${isDarkMode ? "text-gray-400" : "text-blue-100"}`}>
               Enter your current password and choose a new one
             </p>
           </div>
         </div>
 
         {/* Reset Password Card */}
-        <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
+        <Card className="shadow-xl border-0 backdrop-blur-sm">
           <CardContent className="px-8 pt-8 pb-10 space-y-6">
             {/* Error Alert */}
             {errors.submit && (
@@ -264,7 +270,7 @@ export default function ResetPasswordForm({ onBack }: ResetPasswordFormProps) {
               {/* Password strength bar and feedback */}
               {newPassword && (
                 <div className="space-y-2">
-                  <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                  <div className={`h-2 w-full ${isDarkMode ? "bg-gray-700" : "bg-gray-200"} rounded-full overflow-hidden`}>
                     <div
                       className={`h-2 rounded-full transition-all duration-300`}
                       style={{
@@ -278,7 +284,7 @@ export default function ResetPasswordForm({ onBack }: ResetPasswordFormProps) {
                       }}
                     />
                   </div>
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-muted-foreground">
                     {passwordStrength.feedback.suggestions[0] ||
                       ["Weak", "Fair", "Good", "Strong", "Very strong"][
                         passwordStrength.score

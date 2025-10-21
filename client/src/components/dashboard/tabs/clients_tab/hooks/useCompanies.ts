@@ -20,23 +20,22 @@ export function useCompanies(initialCompanies: Company[]) {
   const queryClient = useQueryClient();
 
   // Use React Query for fetching with caching
-  const { data, isLoading } = useQuery({
+  const { data, isLoading: isQueryLoading } = useQuery({
     queryKey: ['companies'],
     queryFn: fetchCompaniesAPI,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const [companies, setCompanies] = useState<Company[]>(data || initialCompanies);
-  const [loading, setLoading] = useState<boolean>(isLoading);
+  const [mutationLoading, setMutationLoading] = useState<boolean>(false);
 
   // Update local state when React Query data changes
   if (data && data !== companies) {
     setCompanies(data);
   }
 
-  if (isLoading !== loading) {
-    setLoading(isLoading);
-  }
+  // Combined loading state: loading if either query is loading OR mutation is in progress
+  const loading = isQueryLoading || mutationLoading;
 
   const fetchCompanies = useCallback(async () => {
     queryClient.invalidateQueries({ queryKey: ['companies'] });
@@ -47,7 +46,7 @@ export function useCompanies(initialCompanies: Company[]) {
     onSuccess: () => void,
     onError: () => void
   ) => {
-    setLoading(true);
+    setMutationLoading(true);
     try {
       await axios.post(
         `${API_URL}/api/company/create-company`,
@@ -56,12 +55,14 @@ export function useCompanies(initialCompanies: Company[]) {
 
       // Invalidate and refetch
       await queryClient.invalidateQueries({ queryKey: ['companies'] });
+
+      // Set loading to false before calling onSuccess
+      setMutationLoading(false);
       onSuccess();
     } catch (error) {
+      setMutationLoading(false);
       console.error("Error creating company:", error);
       onError();
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -71,12 +72,14 @@ export function useCompanies(initialCompanies: Company[]) {
     onSuccess: () => void,
     onError: () => void
   ) => {
-    setLoading(true);
+    setMutationLoading(true);
     try {
       const response = await axios.post(
         `${API_URL}/api/company/add-user-to-company`,
         { companyId, ...form }
       );
+
+      // Update local state immediately for optimistic UI
       setCompanies((prev) =>
         prev.map((company) =>
           company.id === companyId
@@ -84,11 +87,16 @@ export function useCompanies(initialCompanies: Company[]) {
             : company
         )
       );
+
+      // Invalidate React Query cache to ensure data consistency
+      await queryClient.invalidateQueries({ queryKey: ['companies'] });
+
+      // Set loading to false before calling onSuccess to allow modal to close properly
+      setMutationLoading(false);
       onSuccess();
     } catch {
+      setMutationLoading(false);
       onError();
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -99,7 +107,7 @@ export function useCompanies(initialCompanies: Company[]) {
   onSuccess: () => void,
   onError: () => void
 ) => {
-  setLoading(true);
+  setMutationLoading(true);
   try {
     const response = await axios.put(
       `${API_URL}/api/company/update-user/${userId}`,
@@ -110,6 +118,7 @@ export function useCompanies(initialCompanies: Company[]) {
     );
 
     if (response.status === 200) {
+      // Update local state immediately for optimistic UI
       setCompanies((prev) =>
         prev.map((company) => {
           if (company.id === companyId) {
@@ -130,23 +139,29 @@ export function useCompanies(initialCompanies: Company[]) {
           return company;
         })
       );
+
+      // Invalidate React Query cache to ensure data consistency
+      await queryClient.invalidateQueries({ queryKey: ['companies'] });
+
+      // Set loading to false before calling onSuccess
+      setMutationLoading(false);
       onSuccess();
     }
   } catch {
+    setMutationLoading(false);
     onError();
-  } finally {
-    setLoading(false);
   }
 };
 
 const deleteUser = async (userId: string, companyId: string) => {
-  setLoading(true);
+  setMutationLoading(true);
   try {
     const response = await axios.delete(
       `${API_URL}/api/company/delete-user/${companyId}/${userId}`
     );
 
     if (response.status === 200) {
+      // Update local state immediately for optimistic UI
       setCompanies((prev) =>
         prev.map((company) => {
           if (company.id === companyId) {
@@ -158,18 +173,21 @@ const deleteUser = async (userId: string, companyId: string) => {
           return company;
         })
       );
+
+      // Invalidate React Query cache to ensure data consistency
+      await queryClient.invalidateQueries({ queryKey: ['companies'] });
     }
+    setMutationLoading(false);
   } catch (error) {
+    setMutationLoading(false);
     console.error("Error deleting user:", error);
     throw error;
-  } finally {
-    setLoading(false);
   }
 };
 
 
 const deleteCompany = async (companyId: string, onSuccess?: () => void) => {
-  setLoading(true);
+  setMutationLoading(true);
   try {
     const response = await axios.delete(
       `${API_URL}/api/company/delete-company/${companyId}`,
@@ -181,16 +199,21 @@ const deleteCompany = async (companyId: string, onSuccess?: () => void) => {
     );
 
     if (response.status === 200) {
+      // Update local state immediately for optimistic UI
       setCompanies((prev) => prev.filter((company) => company.id !== companyId));
+
+      // Invalidate React Query cache to ensure data consistency
+      await queryClient.invalidateQueries({ queryKey: ['companies'] });
+
+      setMutationLoading(false);
       if (onSuccess) {
         onSuccess();
       }
     }
   } catch (error) {
+    setMutationLoading(false);
     console.error("Error deleting company:", error);
     throw error;
-  } finally {
-    setLoading(false);
   }
 };
 
@@ -200,7 +223,7 @@ const updateCompany = async (
   onSuccess: () => void,
   onError: () => void
 ) => {
-  setLoading(true);
+  setMutationLoading(true);
   try {
     const response = await axios.put(
       `${API_URL}/api/company/update-company/${companyId}`,
@@ -211,6 +234,7 @@ const updateCompany = async (
     );
 
     if (response.status === 200) {
+      // Update local state immediately for optimistic UI
       setCompanies((prev) =>
         prev.map((company) =>
           company.id === companyId
@@ -228,12 +252,17 @@ const updateCompany = async (
             : company
         )
       );
+
+      // Invalidate React Query cache to ensure data consistency
+      await queryClient.invalidateQueries({ queryKey: ['companies'] });
+
+      // Set loading to false before calling onSuccess
+      setMutationLoading(false);
       onSuccess();
     }
   } catch {
+    setMutationLoading(false);
     onError();
-  } finally {
-    setLoading(false);
   }
 };
 

@@ -13,18 +13,9 @@ import AddDownloadModal from "./AddDownloadModal";
 import DownloadsList from "./DownloadsList";
 import HashesModal from "./HashesModal";
 import type { DownloadItem, DownloadsProps } from "./types/DownloadInterfaces";
-import { toast } from "sonner";
+import { toastSuccess, toastError } from "@/utils/toastNotifications";
 import ScaleLoader from "react-spinners/ScaleLoader";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 
 const Downloads: React.FC<DownloadsProps> = ({
   cardClass,
@@ -53,7 +44,9 @@ const Downloads: React.FC<DownloadsProps> = ({
     hashes: Array<{ algorithm: string; hash: string }>;
   }>({ open: false, hashes: [] });
   const [currentPage, setCurrentPage] = useState(1);
+  const [individualFilesPage, setIndividualFilesPage] = useState(1);
   const versionsPerPage = 3;
+  const individualFilesPerPage = 9;
   const [newItem, setNewItem] = useState<DownloadItem>({
     id: "",
     name: "",
@@ -114,9 +107,16 @@ const Downloads: React.FC<DownloadsProps> = ({
     return matchesType && matchesSearch;
   });
 
+  // Paginación para archivos individuales
+  const totalIndividualPages = Math.ceil(filteredIndividualFiles.length / individualFilesPerPage);
+  const individualStartIndex = (individualFilesPage - 1) * individualFilesPerPage;
+  const individualEndIndex = individualStartIndex + individualFilesPerPage;
+  const paginatedIndividualFiles = filteredIndividualFiles.slice(individualStartIndex, individualEndIndex);
+
   // Reset to page 1 when search or filter changes
   React.useEffect(() => {
     setCurrentPage(1);
+    setIndividualFilesPage(1);
   }, [search, filter]);
 
   const handleShowHashes = (
@@ -137,29 +137,14 @@ const Downloads: React.FC<DownloadsProps> = ({
     deleteVersion(
       deleteVersionDialog.versionId,
       () => {
-        toast("Version deleted successfully", {
-          style: {
-            background: "#dc2626",
-            color: "white",
-            border: "1px solid #dc2626",
-          },
-          duration: 4000,
-        });
+        toastSuccess("Version deleted successfully");
         // Reset to first page if current page is now empty
         if (paginatedVersions.length === 1 && currentPage > 1) {
           setCurrentPage(currentPage - 1);
         }
       },
       (error: string) => {
-        toast("Delete failed", {
-          description: error,
-          style: {
-            background: "#dc2626",
-            color: "white",
-            border: "1px solid #dc2626",
-          },
-          duration: 4000,
-        });
+        toastError("Delete failed", error);
       }
     );
     setDeleteVersionDialog({ open: false, versionId: null, versionName: null });
@@ -185,25 +170,10 @@ const Downloads: React.FC<DownloadsProps> = ({
       file,
       handleModalClose,
       () => {
-        toast("File uploaded successfully", {
-          style: {
-            background: "#059669",
-            color: "white",
-            border: "1px solid #059669",
-          },
-          duration: 4000,
-        });
+        toastSuccess("File uploaded successfully");
       },
       (error) => {
-        toast("Upload failed", {
-          description: error,
-          style: {
-            background: "#dc2626",
-            color: "white",
-            border: "1px solid #dc2626",
-          },
-          duration: 4000,
-        });
+        toastError("Upload failed", error);
       }
     );
   };
@@ -218,25 +188,14 @@ const Downloads: React.FC<DownloadsProps> = ({
     deleteItem(
       deleteDialog.item,
       () => {
-        toast("File deleted successfully", {
-          style: {
-            background: "#dc2626",
-            color: "white",
-            border: "1px solid #dc2626",
-          },
-          duration: 4000,
-        });
+        toastSuccess("File deleted successfully");
+        // Reset to first page if current page is now empty
+        if (paginatedIndividualFiles.length === 1 && individualFilesPage > 1) {
+          setIndividualFilesPage(individualFilesPage - 1);
+        }
       },
       (error) => {
-        toast("Delete failed", {
-          description: error,
-          style: {
-            background: "#dc2626",
-            color: "white",
-            border: "1px solid #dc2626",
-          },
-          duration: 4000,
-        });
+        toastError("Delete failed", error);
       }
     );
     setDeleteDialog({ open: false, item: null });
@@ -330,11 +289,18 @@ const Downloads: React.FC<DownloadsProps> = ({
           {/* Archivos Individuales */}
           {filteredIndividualFiles.length > 0 && (
             <div className="space-y-4">
-              <h2 className={`text-xl font-bold ${textClass} px-2`}>
-                Individual Files
-              </h2>
+              <div className="flex items-center justify-between px-2">
+                <h2 className={`text-xl font-bold ${textClass}`}>
+                  Individual Files
+                </h2>
+                {totalIndividualPages > 1 && (
+                  <span className={`text-sm ${mutedTextClass}`}>
+                    Page {individualFilesPage} of {totalIndividualPages}
+                  </span>
+                )}
+              </div>
               <DownloadsList
-                items={filteredIndividualFiles}
+                items={paginatedIndividualFiles}
                 cardClass={cardClass}
                 textClass={textClass}
                 mutedTextClass={mutedTextClass}
@@ -344,6 +310,69 @@ const Downloads: React.FC<DownloadsProps> = ({
                 onDelete={handleDeleteItem}
                 loading={loading}
               />
+
+              {/* Paginación para archivos individuales */}
+              {totalIndividualPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-6">
+                  <button
+                    onClick={() =>
+                      setIndividualFilesPage((prev) => Math.max(1, prev - 1))
+                    }
+                    disabled={individualFilesPage === 1}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                      individualFilesPage === 1
+                        ? "opacity-50 cursor-not-allowed"
+                        : "hover:scale-105"
+                    } ${
+                      darkMode
+                        ? "bg-gray-700 text-white"
+                        : "bg-gray-200 text-gray-800"
+                    }`}
+                  >
+                    <FaChevronLeft className="w-3 h-3" />
+                    Previous
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalIndividualPages }, (_, i) => i + 1).map(
+                      (page) => (
+                        <button
+                          key={page}
+                          onClick={() => setIndividualFilesPage(page)}
+                          className={`w-10 h-10 rounded-lg font-medium transition-all ${
+                            individualFilesPage === page
+                              ? "bg-blue-600 text-white scale-110"
+                              : darkMode
+                              ? "bg-gray-700 text-white hover:bg-gray-600"
+                              : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      )
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() =>
+                      setIndividualFilesPage((prev) => Math.min(totalIndividualPages, prev + 1))
+                    }
+                    disabled={individualFilesPage === totalIndividualPages}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                      individualFilesPage === totalIndividualPages
+                        ? "opacity-50 cursor-not-allowed"
+                        : "hover:scale-105"
+                    } ${
+                      darkMode
+                        ? "bg-gray-700 text-white"
+                        : "bg-gray-200 text-gray-800"
+                    }`}
+                  >
+                    Next
+                    <FaChevronRight className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -554,81 +583,26 @@ const Downloads: React.FC<DownloadsProps> = ({
         darkMode={darkMode}
       />
 
-      <AlertDialog
+      <DeleteConfirmDialog
         open={deleteDialog.open}
         onOpenChange={(open) => setDeleteDialog({ open, item: null })}
-      >
-        <AlertDialogContent
-          className={
-            darkMode
-              ? "bg-gray-800 border-gray-700"
-              : "bg-white border-gray-200"
-          }
-        >
-          <AlertDialogHeader>
-            <AlertDialogTitle className={textClass}>
-              Delete File
-            </AlertDialogTitle>
-            <AlertDialogDescription className={mutedTextClass}>
-              Are you sure you want to delete "{deleteDialog.item?.name}"? This
-              action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              className={darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        title="Delete File"
+        description={`Are you sure you want to delete "${deleteDialog.item?.name}"? This action cannot be undone.`}
+        onConfirm={handleConfirmDelete}
+        darkMode={darkMode}
+      />
 
-      <AlertDialog
+      <DeleteConfirmDialog
         open={deleteVersionDialog.open}
         onOpenChange={(open) =>
           setDeleteVersionDialog({ open, versionId: null, versionName: null })
         }
-      >
-        <AlertDialogContent
-          className={
-            darkMode
-              ? "bg-gray-800 border-gray-700"
-              : "bg-white border-gray-200"
-          }
-        >
-          <AlertDialogHeader>
-            <AlertDialogTitle className={textClass}>
-              Delete Version
-            </AlertDialogTitle>
-            <AlertDialogDescription className={mutedTextClass}>
-              Are you sure you want to delete version "
-              {deleteVersionDialog.versionName}" and all its files? This action
-              cannot be undone and will permanently delete all associated
-              installers and updates.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              className={darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDeleteVersion}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              Delete Version
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        title="Delete Version"
+        description={`Are you sure you want to delete version "${deleteVersionDialog.versionName}" and all its files? This action cannot be undone and will permanently delete all associated installers and updates.`}
+        onConfirm={handleConfirmDeleteVersion}
+        confirmText="Delete Version"
+        darkMode={darkMode}
+      />
 
       <HashesModal
         isOpen={hashesModal.open}

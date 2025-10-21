@@ -3,10 +3,6 @@ import { getAuth, onIdTokenChanged, type User } from "firebase/auth";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// Cache to avoid redundant API calls across components
-let adminCache: { isAdmin: boolean; timestamp: number } | null = null;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
 export function useIsAdmin() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -16,53 +12,25 @@ export function useIsAdmin() {
 
     const resolveIsAdmin = async (user: User) => {
       try {
-        // Check cache first
-        if (adminCache && Date.now() - adminCache.timestamp < CACHE_DURATION) {
-          setIsAdmin(adminCache.isAdmin);
-          setLoading(false);
-          return;
-        }
+        // Get token for authentication
+        const idToken = await user.getIdToken();
 
-        // Use cached token first for faster load - only force refresh if needed
-        const idTokenResult = await user.getIdTokenResult(false);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const claims: any = idTokenResult.claims;
+        // Check server (Firestore) for definitive admin status
+        const res = await fetch(`${API_URL}/api/me`, {
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
 
-        const adminClaim =
-          claims?.admin === true ||
-          claims?.role === "admin" ||
-          (Array.isArray(claims?.roles) && claims.roles.includes("admin"));
-
-        if (adminClaim) {
-          setIsAdmin(true);
-          adminCache = { isAdmin: true, timestamp: Date.now() };
-          setLoading(false);
-          return;
-        }
-
-        // Fallback robusto: verificar en el servidor (si tienes /api/me implementado)
-        // Reuse the same token to avoid extra fetch
-        try {
-          const res = await fetch(`${API_URL}/api/me`, {
-            headers: { Authorization: `Bearer ${idTokenResult.token}` },
-          });
-          if (res.ok) {
-            const data = await res.json();
-            const isAdminValue = Boolean(data?.isAdmin);
-            setIsAdmin(isAdminValue);
-            adminCache = { isAdmin: isAdminValue, timestamp: Date.now() };
-          } else {
-            setIsAdmin(false);
-            adminCache = { isAdmin: false, timestamp: Date.now() };
-          }
-        } catch {
+        if (res.ok) {
+          const data = await res.json();
+          const isAdminValue = Boolean(data?.isAdmin);
+          setIsAdmin(isAdminValue);
+        } else {
           setIsAdmin(false);
-          adminCache = { isAdmin: false, timestamp: Date.now() };
-        } finally {
-          setLoading(false);
         }
-      } catch {
+      } catch (error) {
+        console.error("Error checking admin status:", error);
         setIsAdmin(false);
+      } finally {
         setLoading(false);
       }
     };

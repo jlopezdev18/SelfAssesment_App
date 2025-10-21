@@ -28,7 +28,7 @@ import type { VersioningProps } from "./types/VersioningInterfaces";
 import { useAllVersions } from "./hooks/useAllVersions";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { storage } from "../../../../firebase/config";
-import { toast } from "sonner";
+import { toastSuccess, toastError, toastWarning, toastInfo } from "@/utils/toastNotifications";
 import { useUploadProgress } from "./hooks/useUploadProgress";
 import { useNavigationBlock } from "./hooks/useNavigationBlock";
 import UploadProgressModal from "./UploadProgressModal";
@@ -275,14 +275,14 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
     if (file.downloadUrl && file.downloadUrl !== "#") {
       window.open(file.downloadUrl, "_blank");
     } else {
-      toast.info(`Download would start for: ${file.filename}`);
+      toastInfo(`Download would start for: ${file.filename}`);
     }
   };
 
   // --- ADD VERSION ---
   const handleSubmit = async (): Promise<void> => {
     if (!formData.version || !formData.releaseType || !formData.description) {
-      toast.warning("Please fill in all version information fields");
+      toastWarning("Please fill in all version information fields");
       return;
     }
 
@@ -389,7 +389,7 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
       }
 
       if (filesToAdd.length === 0) {
-        toast.warning("Please fill in at least one file information");
+        toastWarning("Please fill in at least one file information");
         return;
       }
 
@@ -456,18 +456,11 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
       setTimeout(() => {
         cancelUpload(); // Cierra el modal
 
-        toast("Version added successfully! 🎉", {
-          style: {
-            background: "#10b981",
-            color: "white",
-            border: "1px solid #059669",
-          },
-          duration: 4000,
-        });
+        toastSuccess("Version added successfully! 🎉");
       }, 1500);
     } catch (error) {
       cancelUpload();
-      toast.error("Error uploading files. Please try again.");
+      toastError("Error uploading files. Please try again.");
       console.error("Upload error:", error);
     }
   };
@@ -475,7 +468,7 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
   // --- EDIT VERSION ---
   const handleEditVersionSubmit = async (): Promise<void> => {
     if (!formData.version || !formData.releaseType || !formData.description) {
-      toast.warning("Por favor completa todos los campos de la versión");
+      toastWarning("Por favor completa todos los campos de la versión");
       return;
     }
 
@@ -602,29 +595,15 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
         setTimeout(() => {
           cancelUpload(); // Cierra el modal
 
-          toast("Version updated successfully! ✨", {
-            style: {
-              background: "#10b981",
-              color: "white",
-              border: "1px solid #059669",
-            },
-            duration: 4000,
-          });
+          toastSuccess("Version updated successfully! ✨");
         }, 1500);
       } else {
         // Si no hubo carga, mostrar toast inmediatamente
-        toast("Version updated successfully! ✨", {
-          style: {
-            background: "#10b981",
-            color: "white",
-            border: "1px solid #059669",
-          },
-          duration: 4000,
-        });
+        toastSuccess("Version updated successfully! ✨");
       }
     } catch (error) {
       cancelUpload();
-      toast.error("Error al actualizar la versión, intenta de nuevo");
+      toastError("Error al actualizar la versión, intenta de nuevo");
       console.error("Update error:", error);
     }
   };
@@ -632,22 +611,15 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
   // --- DELETE VERSION ---
   const handleDeleteVersion = async () => {
     if (!selectedVersion?.id) {
-      toast.error("No version selected for deletion");
+      toastError("No version selected for deletion");
       return;
     }
 
     try {
       await deleteVersion(selectedVersion.id);
-      toast.success("Version deleted successfully! 🗑️", {
-        style: {
-          background: "#ef4444",
-          color: "white",
-          border: "1px solid #dc2626",
-        },
-        duration: 4000,
-      });
+      toastSuccess("Version deleted successfully! 🗑️");
     } catch (error) {
-      toast.error("Failed to delete version. Please try again.");
+      toastError("Failed to delete version. Please try again.");
       console.error("Delete error:", error);
     }
   };
@@ -784,7 +756,7 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
         fileStatuses={uploadState.fileStatuses}
         onCancel={() => {
           cancelUpload();
-          toast.error("Upload cancelled");
+          toastError("Upload cancelled");
         }}
         darkMode={darkMode}
       />
@@ -979,9 +951,6 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
             </Button>
           </div>
           <VersionForm
-            darkMode={darkMode}
-            textClass={textClass}
-            mutedTextClass={mutedTextClass}
             formData={formData}
             setFormData={setFormData}
             setSelectedInstallerFile={setSelectedInstallerFile}
@@ -990,7 +959,7 @@ const EnhancedVersioning: React.FC<VersioningProps> = ({
             onSubmit={
               formMode === "add" ? handleSubmit : handleEditVersionSubmit
             }
-            isEdit={formMode === "edit"}
+           
           />
         </div>
       )}

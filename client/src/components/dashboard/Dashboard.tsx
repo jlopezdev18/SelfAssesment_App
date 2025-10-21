@@ -6,12 +6,12 @@ import { FaDownload, FaFileAlt, FaCog } from "react-icons/fa";
 import { useIsAdmin } from "../../hooks/useIsAdmin";
 import { useThemeStyles } from "@/contexts/ThemeContext";
 
-// Code splitting with React.lazy()
 const DashboardMain = lazy(() => import("./tabs/main_dashboard/DashboardMain"));
 const Downloads = lazy(() => import("./tabs/download_tab/Downloads"));
 const Settings = lazy(() => import("./tabs/settings/Settings"));
 const ClientsDashboard = lazy(() => import("./tabs/clients_tab/ClientsDashboard"));
 const Versioning = lazy(() => import("./tabs/versioning/Versioning"));
+const RoleManagement = lazy(() => import("./tabs/role_management/RoleManagement"));
 
 // Loading fallback component with better UX
 const LoadingFallback = () => (
@@ -99,6 +99,16 @@ const Dashboard: React.FC = () => {
                 element={
                   <ClientsDashboard
                     cardClass={cardClass}
+                    mutedTextClass={mutedTextClass}
+                    darkMode={isDarkMode}
+                  />
+                }
+              />
+              <Route
+                path="roles"
+                element={
+                  <RoleManagement
+                    textClass={textClass}
                     mutedTextClass={mutedTextClass}
                     darkMode={isDarkMode}
                   />

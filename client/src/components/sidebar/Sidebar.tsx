@@ -8,6 +8,7 @@ import {
   FaChevronRight,
   FaTag,
   FaUserFriends,
+  FaUserShield,
 } from "react-icons/fa";
 import { signOut } from "firebase/auth";
 import { auth } from "../../firebase/config";
@@ -168,8 +169,20 @@ const Sidebar: React.FC<SidebarProps> = ({
         </nav>
       </div>
 
-      {/* Bottom section - Theme Toggle & Logout */}
+      {/* Bottom section - Role Management, Theme Toggle & Logout */}
       <div className="p-6">
+        {isAdmin && (
+          <>
+            <NavItem
+              icon={<FaUserShield className="w-5 h-5 flex-shrink-0" />}
+              label="Role Management"
+              path="/dashboard/roles"
+              sidebarCollapsed={sidebarCollapsed}
+              darkMode={isDarkMode}
+            />
+            <Separator className="my-4" />
+          </>
+        )}
         <div className="mb-4 flex justify-center">
           {sidebarCollapsed ? (
             <TooltipProvider>
