@@ -3,11 +3,13 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../../firebase/config";
 import Login from "../login/Login";
 import ResetPasswordForm from "../resetPassword/ResetPasswordForm";
+import ForgotPasswordForm from "../forgotPassword/ForgotPasswordForm";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSessionTimeout } from "../../hooks/useSessionTimeout";
 
 const ProtectedDashboard: React.FC = () => {
   const [showResetForm, setShowResetForm] = useState(false);
+  const [showForgotPasswordForm, setShowForgotPasswordForm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,6 +24,7 @@ const ProtectedDashboard: React.FC = () => {
     async function checkUser(user: import("firebase/auth").User | null) {
       if (!user) {
         setShowResetForm(false);
+        setShowForgotPasswordForm(false);
         setIsLoading(false);
         // Only navigate if not already on root
         if (location.pathname !== "/") {
@@ -54,7 +57,9 @@ const ProtectedDashboard: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300 font-medium">Loading...</p>
+          <p className="text-gray-600 dark:text-gray-300 font-medium">
+            Loading...
+          </p>
         </div>
       </div>
     );
@@ -64,7 +69,18 @@ const ProtectedDashboard: React.FC = () => {
     return <ResetPasswordForm onBack={() => setShowResetForm(false)} />;
   }
 
-  return <Login onShowResetForm={() => setShowResetForm(true)} />;
+  if (showForgotPasswordForm) {
+    return (
+      <ForgotPasswordForm onBack={() => setShowForgotPasswordForm(false)} />
+    );
+  }
+
+  return (
+    <Login
+      onShowResetForm={() => setShowResetForm(true)}
+      onShowForgotPasswordForm={() => setShowForgotPasswordForm(true)}
+    />
+  );
 };
 
 export default ProtectedDashboard;

@@ -18,8 +18,10 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Login({
   onShowResetForm,
+  onShowForgotPasswordForm,
 }: {
   onShowResetForm: () => void;
+  onShowForgotPasswordForm: () => void;
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,7 +34,7 @@ export default function Login({
   const onSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(""); 
+    setError("");
 
     try {
       await loginWithEmail(email, password);
@@ -49,7 +51,7 @@ export default function Login({
 
         // Prefetch data while showing toast to improve perceived performance
         queryClient.prefetchQuery({
-          queryKey: ['release-posts'],
+          queryKey: ["release-posts"],
           queryFn: async () => {
             const res = await axios.get(`${API_URL}/api/release-posts`);
             return res.data;
@@ -58,11 +60,14 @@ export default function Login({
         });
         const userName =
           user.displayName || user.email?.split("@")[0] || "User";
-        toastSuccess(`Welcome back, ${userName}! 🎉`, "You've successfully logged in to your dashboard.");
+        toastSuccess(
+          `Welcome back, ${userName}! 🎉`,
+          "You've successfully logged in to your dashboard."
+        );
       }
 
       navigate("/dashboard/main", { replace: true });
-  
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Login failed:", error.code);
@@ -156,7 +161,7 @@ export default function Login({
                     type="button"
                     variant="link"
                     size="sm"
-                    onClick={onShowResetForm}
+                    onClick={onShowForgotPasswordForm}
                     className="p-0 h-auto text-xs font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
                     disabled={isLoading}
                   >
